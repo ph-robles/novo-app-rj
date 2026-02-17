@@ -25,7 +25,7 @@ sidebar_style = """
 .sidebar-logo {
     display: flex;
     justify-content: center;
-    margin-bottom: 30px;
+    margin-bottom: 100px;
 }
 
 /* ----------------------------
@@ -35,7 +35,7 @@ sidebar_style = """
 
     /* Sidebar fica mais larga (apenas ajuste solicitado) */
     [data-testid="stSidebar"] {
-        width: 136px !important;
+        width: 280px !important;
         min-width: 136px !important;
         padding-top: 24px;
         padding-left: 6px;
