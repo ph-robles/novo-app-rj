@@ -178,7 +178,7 @@ result_ct = st.container()
 # ---------- Formulário com botão OK logo abaixo ----------
 with st.form("form_sigla", clear_on_submit=False):
     st.session_state["busca_sigla_input"] = st.text_input(
-        "Digite a SIGLA (ex.: DJU, GAA, ABC123)",
+        "Digite a SIGLA do site/ERB",
         value=st.session_state.get("busca_sigla_input", "")
     )
     submitted = st.form_submit_button("OK")  # <= Botão OK
