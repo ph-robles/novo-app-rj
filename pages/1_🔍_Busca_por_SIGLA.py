@@ -25,7 +25,7 @@ sidebar_style = """
 .sidebar-logo {
     display: flex;
     justify-content: center;
-    margin-bottom: 100px;
+    margin-bottom: 250px;
 }
 
 /* ----------------------------
@@ -42,7 +42,7 @@ sidebar_style = """
         padding-right: 6px;
     }
 
-    /* A logo se ajusta para 80px (pedido) */
+    /* A logo se ajusta para 250px (pedido) */
     .sidebar-logo img {
         width: 80px !important;
     }
