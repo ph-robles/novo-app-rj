@@ -28,13 +28,13 @@ sidebar_style = """
 .sidebar-logo {
     display: flex;
     justify-content: center;
-    margin-bottom: 30px;
+    margin-bottom: 250px;
 }
 
 /* Sidebar compacta no celular (ajustada) */
 @media (max-width: 760px) {
     [data-testid="stSidebar"] {
-        width: 136px !important;       /* largura aumentada */
+        width: 300px !important;       /* largura aumentada */
         min-width: 136px !important;
         padding-top: 24px;
         padding-left: 6px;
@@ -42,7 +42,7 @@ sidebar_style = """
     }
 
     .sidebar-logo img {
-        width: 80px !important;        /* logo aumentada */
+        width: 250px !important;        /* logo aumentada */
     }
 
     .sidebar-content, .sidebar-text {
@@ -83,7 +83,7 @@ st.markdown(sidebar_style, unsafe_allow_html=True)
 # Sidebar com logo
 with st.sidebar:
     st.markdown('<div class="sidebar-logo">', unsafe_allow_html=True)
-    st.image("logo.png", width=130)
+    st.image("logo.png", width=300)
     st.markdown("</div>", unsafe_allow_html=True)
 
 # ==============================
