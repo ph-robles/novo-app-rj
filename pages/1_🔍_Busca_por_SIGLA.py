@@ -2,10 +2,9 @@ import streamlit as st
 from utils.data_loader import carregar_dados, carregar_acessos
 from utils.helpers import normalizar_sigla, levenshtein
 
-with st.sidebar:
-    st.image("logo.png", width=160)
-
-# --- CSS PREMIUM PARA A SIDEBAR ---
+# ==============================
+#   SIDEBAR PREMIUM
+# ==============================
 sidebar_style = """
 <style>
 
@@ -15,27 +14,17 @@ sidebar_style = """
     padding-top: 40px;
 }
 
-/* Logo centralizada e com padding */
+/* Logo centralizada */
 .sidebar-logo {
     display: flex;
     justify-content: center;
     margin-bottom: 25px;
 }
 
-/* Espacamento padrao */
+/* Ajustes de conteúdo */
 .sidebar-content {
     padding-left: 15px;
     padding-right: 15px;
-}
-
-/* Remover borda superior chata do Streamlit */
-[data-testid="stSidebar"] > div:first-child {
-    padding-top: 0 !important;
-}
-
-/* Hover suave nos links (se você quiser futuramente adicionar menu) */
-.sidebar-link:hover {
-    opacity: 0.85;
 }
 
 </style>
@@ -47,8 +36,11 @@ with st.sidebar:
     st.image("logo.png", width=140)
     st.markdown("</div>", unsafe_allow_html=True)
 
+# ==============================
+#   PÁGINA PRINCIPAL
+# ==============================
 
-st.title("🔍 Busca por SIGLA")
+st.title("🔍 Buscar por SIGLA")
 
 df = carregar_dados()
 acessos = carregar_acessos()
@@ -60,14 +52,14 @@ sig = st.text_input("Digite a SIGLA")
 if sig:
     sig_n = normalizar_sigla(sig)
 
-    # match exato
+    # 1) Match exato
     achada = None
     for s in lista_siglas:
         if normalizar_sigla(s) == sig_n:
             achada = s
             break
 
-    # fuzzy
+    # 2) Fuzzy
     if not achada:
         dists = [(s, levenshtein(normalizar_sigla(s), sig_n)) for s in lista_siglas]
         achada = min(dists, key=lambda x: x[1])[0] if dists else None
