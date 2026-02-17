@@ -1,7 +1,6 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
-import pydeck as pdk
 
 # === Integração com dados reais ===
 from utils.data_loader import carregar_dados, carregar_capacitados_lista
@@ -9,7 +8,7 @@ from utils.data_loader import carregar_dados, carregar_capacitados_lista
 # =============================================================================
 # CONFIG
 # =============================================================================
-st.set_page_config(page_title="Site Radar", page_icon="📡", layout="wide")
+st.set_page_config(page_title="Home • Site Radar", page_icon="📡", layout="wide")
 
 # =============================================================================
 # ESTILOS GERAIS (Topbar, Hero, Cards, Botões) + Ocultar sidebar só na Home
@@ -29,9 +28,15 @@ STYLES = """
     display: flex; align-items: center; justify-content: space-between;
     padding: 0 16px; z-index: 9999;
 }
-.topbar .brand { display: inline-flex; align-items: center; gap: 12px; color: #E6ECF3; text-decoration: none; }
-.topbar .brand img { width: 28px; height: 28px; object-fit: contain; }
-.topbar .brand .title { font-size: 18px; font-weight: 800; letter-spacing: .2px; }
+/* Branding da topbar: agora exibimos somente a logo */
+.topbar .brand {
+    display: inline-flex; align-items: center; gap: 10px;
+}
+.topbar .brand img {
+    height: 32px; width: auto; object-fit: contain;
+    filter: drop-shadow(0 1px 2px rgba(0,0,0,.25));
+}
+/* Texto auxiliar no topo (versão/ambiente) */
 .topbar .actions { color: #C7D0DD; font-size: 14px; opacity: .75; }
 
 /* ===== Ocultar Sidebar SÓ na Home ===== */
@@ -87,14 +92,6 @@ div.stButton > button:active { transform: translateY(0) scale(.98); background: 
 }
 .action-card p { color: #BFD2F6; font-size: 13.5px; margin: 4px 0 14px 0; }
 
-/* ===== Legenda do mini-mapa ===== */
-.legend {
-    display:flex; align-items:center; gap:14px; color:#A9B5C4; font-size:13px; margin: 6px 0 12px 2px;
-}
-.legend .dot { width:10px; height:10px; border-radius:50%; display:inline-block; }
-.dot.cap { background: rgba(20,220,200,1); }
-.dot.ncap { background: rgba(24,120,240,1); }
-
 /* ===== Rodapé ===== */
 .footer { color: #9EABBB; font-size: 12.5px; text-align: center; margin-top: 16px; }
 </style>
@@ -102,14 +99,13 @@ div.stButton > button:active { transform: translateY(0) scale(.98); background: 
 st.markdown(STYLES, unsafe_allow_html=True)
 
 # =============================================================================
-# TOPBAR (visual; navegação real continua nos botões)
+# TOPBAR (agora exibindo apenas a sua logo 'logo.png')
 # =============================================================================
 st.markdown(
     """
     <div class="topbar">
         <div class="brand">
-            <img src="logo.png" alt="Logo"/>
-            <span class="title">Site Radar</span>
+            logo.png
         </div>
         <div class="actions">v1.0 • Ambiente de Produção</div>
     </div>
@@ -135,8 +131,6 @@ total_erbs = int(len(df))
 
 if lat_col and lon_col:
     df_coords = df.dropna(subset=[lat_col, lon_col]).copy()
-    df_coords["lat"] = df_coords[lat_col].astype(float)
-    df_coords["lon"] = df_coords[lon_col].astype(float)
     com_coord = int(len(df_coords))
 else:
     df_coords = pd.DataFrame(columns=["lat", "lon"])
@@ -226,66 +220,6 @@ st.markdown(
     """,
     unsafe_allow_html=True
 )
-
-# =============================================================================
-# MINI-MAPA (pydeck) — compacto e técnico
-# =============================================================================
-st.markdown('<div class="section-title">🗺️ Mini‑mapa</div>', unsafe_allow_html=True)
-
-if not df_coords.empty:
-    # Centro inicial: média das coordenadas (fallback RJ)
-    init_lat = float(np.clip(df_coords["lat"].mean(), -90, 90)) if df_coords["lat"].notna().any() else -22.9068
-    init_lon = float(np.clip(df_coords["lon"].mean(), -180, 180)) if df_coords["lon"].notna().any() else -43.1729
-
-    # Cores: capacitado = ciano; não capacitado = azul
-    df_coords["_is_capacitado"] = (col_cap_bool | in_list_bool).reindex(df_coords.index, fill_value=False)
-    df_coords["_r"] = np.where(df_coords["_is_capacitado"], 20, 24)
-    df_coords["_g"] = np.where(df_coords["_is_capacitado"], 220, 120)
-    df_coords["_b"] = np.where(df_coords["_is_capacitado"], 200, 240)
-    df_coords["_a"] = 190
-
-    # Tooltip fields seguros
-    for col in ["sigla", "nome", "detentora", "endereco"]:
-        if col not in df_coords.columns:
-            df_coords[col] = ""
-
-    # Camada de pontos
-    layer_points = pdk.Layer(
-        "ScatterplotLayer",
-        data=df_coords,
-        get_position='[lon, lat]',
-        get_fill_color='[_r, _g, _b, _a]',
-        get_radius=40,  # metros
-        radius_min_pixels=2,
-        radius_max_pixels=10,
-        pickable=True,
-        auto_highlight=True,
-    )
-
-    view_state = pdk.ViewState(latitude=init_lat, longitude=init_lon, zoom=10, pitch=0)
-
-    deck = pdk.Deck(
-        layers=[layer_points],
-        initial_view_state=view_state,
-        tooltip={
-            "html": "<b>{sigla}</b><br/>{nome}<br/>{detentora}<br/>{endereco}",
-            "style": {"backgroundColor": "rgba(20,25,35,0.85)", "color": "white"}
-        },
-        map_style="mapbox://styles/mapbox/dark-v11",
-    )
-
-    # Legenda simples
-    st.markdown(
-        '<div class="legend">'
-        '<span class="dot cap"></span> Capacitado'
-        '<span class="dot ncap" style="margin-left:16px;"></span> Não capacitado'
-        '</div>',
-        unsafe_allow_html=True
-    )
-
-    st.pydeck_chart(deck, use_container_width=True, height=380)
-else:
-    st.info("Nenhuma ERB com coordenadas válidas para exibir no mapa.")
 
 # =============================================================================
 # Gráfico por detentora (Top 8) — se existir a coluna
