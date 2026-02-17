@@ -63,6 +63,19 @@ sidebar_style = """
     margin-left: 8px;
 }
 
+/* Badge de destaque (primeiro capacitado) */
+.first-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 6px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: #0057d9;
+    background: rgba(0, 87, 217, .08);
+    border: 1px solid rgba(0, 87, 217, .18);
+    margin-left: 8px;
+}
+
 </style>
 """
 st.markdown(sidebar_style, unsafe_allow_html=True)
@@ -148,64 +161,61 @@ with result_ct:
     # Calcular distâncias em linha reta
     base["dist_km"] = haversine_km(lat_cli, lon_cli, base["lat"], base["lon"])
 
-    # 1) Top 3 por linha reta
-    top3 = base.nsmallest(3, "dist_km").copy()
-
-    # 2) Capacitado mais próximo (se houver)
-    base_cap = base[base["_is_capacitado"] == True]
+    # ================= LÓGICA QUE VOCÊ PEDIU =================
+    # 1) Escolher SEMPRE o capacitado mais próximo (se existir), mesmo que esteja longe
+    base_cap = base[base["_is_capacitado"] == True].copy()
     forced_cap_row = None
     if not base_cap.empty:
         idx_min_cap = base_cap["dist_km"].idxmin()
-        forced_cap_row = base_cap.loc[[idx_min_cap]].copy()
+        forced_cap_row = base_cap.loc[[idx_min_cap]].copy()  # 1 linha (DataFrame)
 
-    # 3) Forçar inclusão do capacitado mais próximo no top3
+    # 2) Pegar os 2 mais próximos (excluindo o capacitado escolhido, se houver)
     if forced_cap_row is not None:
-        siglas_top3 = top3["sigla"].astype(str).str.upper().tolist()
-        sigla_cap = str(forced_cap_row.iloc[0]["sigla"]).upper()
+        excl_index = forced_cap_row.index[0]
+        restantes = base.drop(index=excl_index).copy()
+        outros2 = restantes.nsmallest(2, "dist_km").copy()
+        # Combinar: capacitado escolhido (primeiro) + dois mais próximos
+        final = pd.concat([forced_cap_row, outros2], ignore_index=True)
+        # Marcar coluna auxiliar para destacar o primeiro capacitado
+        final["_is_forced_cap"] = [True] + [False] * (len(final) - 1)
+    else:
+        # Se não houver capacitado, fica apenas o top-3 normal
+        final = base.nsmallest(3, "dist_km").copy()
+        final["_is_forced_cap"] = [False] * len(final)
 
-        if sigla_cap not in siglas_top3:
-            union_df = pd.concat([top3, forced_cap_row], ignore_index=True)
-            # Mantém ordem por menor distância linear
-            union_df = union_df.sort_values("dist_km", ascending=True)
-            # Remove duplicatas por SIGLA
-            union_df = union_df.drop_duplicates(subset=["sigla"], keep="first")
-            # Garante só 3
-            if len(union_df) > 3:
-                union_df = union_df.head(3)
-            top3 = union_df.reset_index(drop=True)
-        else:
-            # já estava no top3, só garante ordenação por distância
-            top3 = top3.sort_values("dist_km", ascending=True).reset_index(drop=True)
+    # ==========================================================
 
     # Distância via rota (OSRM)
-    destinos = [(float(r["lat"]), float(r["lon"])) for _, r in top3.iterrows()]
+    destinos = [(float(r["lat"]), float(r["lon"])) for _, r in final.iterrows()]
     osrm_out = osrm_table(lat_cli, lon_cli, destinos)
 
-    if osrm_out and len(osrm_out) == len(top3):
-        top3["dist_rota_km"] = [x["distance_km"] for x in osrm_out]
-        top3["tempo_min"]    = [x["duration_min"] for x in osrm_out]
+    if osrm_out and len(osrm_out) == len(final):
+        final["dist_rota_km"] = [x["distance_km"] for x in osrm_out]
+        final["tempo_min"]    = [x["duration_min"] for x in osrm_out]
     else:
-        top3["dist_rota_km"] = None
-        top3["tempo_min"]    = None
+        final["dist_rota_km"] = None
+        final["tempo_min"]    = None
 
     # Tabela resumida com info útil
-    mostrar_cols = [c for c in ["sigla","nome","detentora","endereco","lat","lon","capacitado","dist_km","dist_rota_km","tempo_min"] if c in top3.columns]
-    st.markdown("### 📌 3 Sites mais próximos (com capacitado priorizado)")
-    st.dataframe(top3[mostrar_cols], use_container_width=True)
+    mostrar_cols = [c for c in ["sigla","nome","detentora","endereco","lat","lon","capacitado","_is_capacitado","dist_km","dist_rota_km","tempo_min"] if c in final.columns]
+    st.markdown("### 📌 Resultado (sempre inclui o capacitado mais próximo, se existir)")
+    st.dataframe(final[mostrar_cols], use_container_width=True)
 
     # ======= CARTÕES DETALHADOS =======
-    for _, row in top3.iterrows():
+    for _, row in final.iterrows():
         erb_lat = float(row["lat"])
         erb_lon = float(row["lon"])
         sigla   = str(row.get("sigla", "—"))
         nome    = str(row.get("nome", "—"))
         is_cap  = bool(row.get("_is_capacitado", False))
         cap_md  = _cap_badge(is_cap)
+        is_first = bool(row.get("_is_forced_cap", False))
+        first_md = ' <span class="first-badge">Capacitado mais próximo</span>' if is_first and is_cap else ""
 
         rota    = f"https://www.google.com/maps/dir/?api=1&origin={lat_cli},{lon_cli}&destination={erb_lat},{erb_lon}&travelmode=driving"
         maps    = f"https://www.google.com/maps/search/?api=1&query={erb_lat},{erb_lon}"
 
-        st.markdown(f"### **{sigla} — {nome}**{cap_md}", unsafe_allow_html=True)
+        st.markdown(f"### **{sigla} — {nome}**{cap_md}{first_md}", unsafe_allow_html=True)
         st.markdown(
             f"🗺️ **Linha reta:** {row['dist_km']:.3f} km  \n"
             f"🚗 **Distância por rota:** {row.get('dist_rota_km', '—')} km  \n"
