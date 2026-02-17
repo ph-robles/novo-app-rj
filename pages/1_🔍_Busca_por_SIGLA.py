@@ -1,6 +1,8 @@
 import streamlit as st
 from utils.data_loader import carregar_dados, carregar_acessos
 from utils.helpers import normalizar_sigla, levenshtein
+import pandas as pd
+import math
 
 st.set_page_config(page_title="Buscar por SIGLA • Site Radar", page_icon="📡", layout="wide")
 
@@ -63,44 +65,97 @@ with st.sidebar:
     st.markdown("</div>", unsafe_allow_html=True)
 
 # ==============================
-#   CONTEÚDO DA PÁGINA
+#   CONTEÚDO — BUSCA POR SIGLA
 # ==============================
 st.title("🔍 Buscar por SIGLA")
 
 df = carregar_dados()
 acessos = carregar_acessos()
 
-lista_siglas = sorted(df["sigla"].dropna().str.upper().unique().tolist())
+# Lista de siglas únicas (UPPER) para facilitar match
+lista_siglas = sorted(df["sigla"].dropna().astype(str).str.upper().unique().tolist())
 
 sig = st.text_input("Digite a SIGLA")
+
+def _format_coord(x):
+    try:
+        if pd.isna(x):
+            return "—"
+        return f"{float(x):.6f}"
+    except Exception:
+        return "—"
 
 if sig:
     sig_n = normalizar_sigla(sig)
 
-    # Match exato
+    # 1) Match exato (após normalizar)
     achada = None
     for s in lista_siglas:
         if normalizar_sigla(s) == sig_n:
             achada = s
             break
 
-    # Fuzzy
+    # 2) Fuzzy: pega a menor distância de edição
     if not achada and lista_siglas:
         achada = min(lista_siglas, key=lambda x: levenshtein(normalizar_sigla(x), sig_n))
 
     if achada:
         st.success(f"SIGLA encontrada: **{achada}**")
-        dados = df[df["sigla"].str.upper() == achada]
-        st.dataframe(dados, use_container_width=True)
+        # filtra linhas da sigla (case-insensitive)
+        dados = df[df["sigla"].astype(str).str.upper() == achada].copy()
 
-        if acessos is not None and not acessos.empty:
-            tecs = (
-                acessos[acessos["sigla"].str.upper() == achada]["tecnico"]
-                .dropna().unique().tolist()
+        # Mostra uma tabela resumida
+        cols_show = [c for c in ["sigla", "nome", "detentora", "endereco", "lat", "lon", "capacitado"] if c in dados.columns]
+        if cols_show:
+            st.dataframe(dados[cols_show], use_container_width=True)
+        else:
+            st.dataframe(dados, use_container_width=True)
+
+        # Cartões de detalhes por linha (caso haja mais de 1 site com a mesma sigla)
+        st.markdown("### 📍 Detalhes")
+        for _, row in dados.iterrows():
+            sigla_row = str(row.get("sigla", "—"))
+            nome_row = str(row.get("nome", "—"))
+            det_row  = str(row.get("detentora", "—")) if pd.notna(row.get("detentora")) else "—"
+            end_row  = str(row.get("endereco", "—"))
+            lat_val  = row.get("lat")
+            lon_val  = row.get("lon")
+            cap_row  = str(row.get("capacitado", "—")) if pd.notna(row.get("capacitado")) else "—"
+
+            st.markdown(f"**{sigla_row} — {nome_row}**")
+            st.markdown(
+                f"🏢 **Detentora:** {det_row}  \n"
+                f"📌 **Endereço:** {end_row}  \n"
+                f"🧰 **Capacitado:** {cap_row}  \n"
+                f"🧭 **Coordenadas:** {_format_coord(lat_val)}, {_format_coord(lon_val)}"
             )
-            if tecs:
-                st.info("👷 Técnicos liberados:\n" + "\n".join(f"- {t}" for t in tecs))
+
+            # Botão Google Maps (só se tiver coordenadas válidas)
+            try:
+                if pd.notna(lat_val) and pd.notna(lon_val):
+                    lat_f = float(lat_val)
+                    lon_f = float(lon_val)
+                    maps_url = f"https://www.google.com/maps/search/?api=1&query={lat_f},{lon_f}"
+                    st.link_button("🗺️ Ver no Google Maps", maps_url, type="primary")
+            except Exception:
+                pass
+
+            # Técnicos com acesso liberado (se houver aba acessos)
+            if acessos is not None and not acessos.empty:
+                tecs = (
+                    acessos[acessos["sigla"].astype(str).str.upper() == sigla_row.upper()]
+                    .get("tecnico", pd.Series(dtype="string"))
+                    .dropna()
+                    .unique()
+                    .tolist()
+                )
+                if tecs:
+                    st.info("👷 **Técnicos com acesso:**\n" + "\n".join([f"- {t}" for t in tecs]))
+                else:
+                    st.info("👷 Nenhum técnico com acesso cadastrado para esta SIGLA.")
             else:
-                st.info("Nenhum técnico cadastrado para esta SIGLA.")
+                st.caption("ℹ️ Aba `acessos` não encontrada ou sem dados.")
+
+            st.markdown("---")
     else:
         st.error("Nenhuma SIGLA compatível encontrada.")
