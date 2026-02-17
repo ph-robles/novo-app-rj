@@ -1,4 +1,5 @@
 import streamlit as st
+import pandas as pd
 from utils.data_loader import carregar_dados
 from utils.geocode import geocode_address
 from utils.helpers import haversine_km
@@ -9,6 +10,7 @@ st.set_page_config(page_title="Buscar por ENDEREÇO • Site Radar", page_icon="
 # ==============================
 #   SIDEBAR PREMIUM COMPACTA (BLUR + MOBILE SAFE)
 # ==============================
+
 sidebar_style = """
 <style>
 
@@ -29,11 +31,8 @@ sidebar_style = """
     margin-bottom: 30px;
 }
 
-/* ----------------------------
-   SIDEBAR COMPACTA MOBILE
------------------------------ */
+/* Sidebar compacta no celular */
 @media (max-width: 760px) {
-
     [data-testid="stSidebar"] {
         width: 80px !important;
         min-width: 80px !important;
@@ -46,7 +45,7 @@ sidebar_style = """
         width: 60px !important;
     }
 
-    .sidebar-content, .sidebar-text, .sidebar-extra {
+    .sidebar-content, .sidebar-text {
         display: none !important;
     }
 }
@@ -62,38 +61,94 @@ with st.sidebar:
     st.markdown("</div>", unsafe_allow_html=True)
 
 # ==============================
-#   CONTEÚDO DA PÁGINA
+#   CONTEÚDO — BUSCA POR ENDEREÇO
 # ==============================
+
 st.title("🧭 Buscar por ENDEREÇO")
 
 df = carregar_dados()
 
-end = st.text_input("Digite o endereço do cliente:")
+# Criamos um container para os resultados
+result_ct = st.container()
 
-if end:
-    geo = geocode_address(end)
+# ============= FORMULÁRIO COM BOTÃO OK =============
+with st.form("form_endereco", clear_on_submit=False):
+    endereco_cliente = st.text_input(
+        "Digite o endereço completo (rua, número, bairro, cidade)"
+    )
+    submitted = st.form_submit_button("OK")  # <= Botão OK
+
+# Se não clicou OK, não faz nada ainda
+if not submitted:
+    st.caption("Dica: digite um endereço e clique em **OK**.")
+    st.stop()
+
+# ==============================
+#   PROCESSAR BUSCA APÓS OK
+# ==============================
+
+with result_ct:
+    if not endereco_cliente.strip():
+        st.error("❌ Digite um endereço válido antes de continuar.")
+        st.stop()
+
+    with st.spinner("🔎 Localizando endereço..."):
+        geo = geocode_address(endereco_cliente)
+
     if not geo:
-        st.error("Endereço não encontrado. Tente incluir número, bairro e cidade (RJ).")
+        st.error("❌ Não foi possível localizar o endereço informado.")
+        st.stop()
+
+    lat_cli, lon_cli, form = geo
+    st.success(f"Endereço encontrado:\n\n**{form}**")
+    st.write(f"🧭 **Coordenadas:** {lat_cli:.6f}, {lon_cli:.6f}")
+
+    # Garantir que existam ERBs válidas
+    base = df.dropna(subset=["lat", "lon"]).copy()
+    if base.empty:
+        st.error("⚠ Nenhuma ERB possui coordenadas válidas na planilha.")
+        st.stop()
+
+    # Calcular distâncias em linha reta
+    base["dist_km"] = haversine_km(lat_cli, lon_cli, base["lat"], base["lon"])
+
+    # Top 3 por linha reta
+    top3 = base.nsmallest(3, "dist_km").copy()
+
+    # Distância via rota (OSRM)
+    destinos = [(float(r["lat"]), float(r["lon"])) for _, r in top3.iterrows()]
+    osrm_out = osrm_table(lat_cli, lon_cli, destinos)
+
+    if osrm_out and len(osrm_out) == len(top3):
+        top3["dist_rota_km"] = [x["distance_km"] for x in osrm_out]
+        top3["tempo_min"]    = [x["duration_min"] for x in osrm_out]
     else:
-        lat, lon, form = geo
-        st.success(f"Endereço localizado: **{form}**")
+        top3["dist_rota_km"] = None
+        top3["tempo_min"]    = None
 
-        base = df.dropna(subset=["lat", "lon"]).copy()
-        base["dist_km"] = haversine_km(lat, lon, base["lat"], base["lon"])
-        top3 = base.nsmallest(3, "dist_km").copy()
+    st.markdown("### 📌 3 Sites mais próximos")
+    st.dataframe(top3, use_container_width=True)
 
-        destinos = [(r["lat"], r["lon"]) for _, r in top3.iterrows()]
-        osrm_out = osrm_table(lat, lon, destinos)
+    # ======= CARTÕES DETALHADOS =======
+    for _, row in top3.iterrows():
+        erb_lat = float(row["lat"])
+        erb_lon = float(row["lon"])
+        sigla   = row["sigla"]
+        nome    = row["nome"]
+        rota    = f"https://www.google.com/maps/dir/?api=1&origin={lat_cli},{lon_cli}&destination={erb_lat},{erb_lon}&travelmode=driving"
+        maps    = f"https://www.google.com/maps/search/?api=1&query={erb_lat},{erb_lon}"
 
-        if osrm_out and len(osrm_out) == len(top3):
-            top3["dist_rota_km"] = [x["distance_km"] for x in osrm_out]
-            top3["tempo_min"]    = [x["duration_min"] for x in osrm_out]
+        st.markdown(f"### **{sigla} — {nome}**")
+        st.markdown(
+            f"🗺️ **Linha reta:** {row['dist_km']:.3f} km  \n"
+            f"🚗 **Distância por rota:** {row.get('dist_rota_km', '—')} km  \n"
+            f"⏱ **Tempo estimado:** {row.get('tempo_min', '—')} min  \n"
+        )
 
-        st.dataframe(top3, use_container_width=True)
-
-        for _, r in top3.iterrows():
-            maps = f"https://www.google.com/maps/search/?api=1&query={r['lat']},{r['lon']}"
-            rota = f"https://www.google.com/maps/dir/?api=1&origin={lat},{lon}&destination={r['lat']},{r['lon']}"
-            st.link_button(f"📍 Ver {r['sigla']} no Maps", maps)
+        col1, col2 = st.columns(2)
+        with col1:
+            st.link_button("🗺️ Ver no Maps", maps)
+        with col2:
             st.link_button("🚗 Traçar rota", rota)
-            st.markdown("---")
+
+        st.markdown("---")
