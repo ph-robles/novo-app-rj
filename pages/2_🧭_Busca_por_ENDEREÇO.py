@@ -31,18 +31,18 @@ sidebar_style = """
     margin-bottom: 30px;
 }
 
-/* Sidebar compacta no celular */
+/* Sidebar compacta no celular (ajustada) */
 @media (max-width: 760px) {
     [data-testid="stSidebar"] {
-        width: 80px !important;
-        min-width: 80px !important;
+        width: 136px !important;       /* largura aumentada */
+        min-width: 136px !important;
         padding-top: 24px;
         padding-left: 6px;
         padding-right: 6px;
     }
 
     .sidebar-logo img {
-        width: 60px !important;
+        width: 80px !important;        /* logo aumentada */
     }
 
     .sidebar-content, .sidebar-text {
