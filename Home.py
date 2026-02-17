@@ -4,7 +4,7 @@ st.set_page_config(page_title="Sites RJ", page_icon="📡")
 
 st.image("logo.png", width=220)  # ajuste o tamanho que quiser
 
-st.title("📡 Endereços dos Sites RJ — Novo App")
+st.title("📡 Endereços dos Sites Leste")
 
 st.markdown("""
 ## Escolha uma opção no menu lateral 👇
