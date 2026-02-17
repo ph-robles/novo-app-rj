@@ -60,3 +60,6 @@ with col1:
 with col2:
     if st.button("🧭 Buscar por ENDEREÇO", use_container_width=True):
         st.switch_page("pages/2_🧭_Busca_por_ENDEREÇO.py")
+
+
+st.caption("❤️ Desenvolvido por Raphael Robles - @2026 - Todos os direitos reservados 🚀")
