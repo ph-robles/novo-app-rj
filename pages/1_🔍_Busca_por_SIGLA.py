@@ -93,7 +93,7 @@ st.markdown(sidebar_style, unsafe_allow_html=True)
 # Sidebar com logo
 with st.sidebar:
     st.markdown('<div class="sidebar-logo">', unsafe_allow_html=True)
-    st.image("logo.png", width=130)
+    st.image("logo.png", width=250)
     st.markdown("</div>", unsafe_allow_html=True)
 
 # ==============================
