@@ -28,15 +28,12 @@ STYLES = """
     display: flex; align-items: center; justify-content: space-between;
     padding: 0 16px; z-index: 9999;
 }
-/* Branding da topbar: agora exibimos somente a logo */
-.topbar .brand {
-    display: inline-flex; align-items: center; gap: 10px;
-}
+/* Branding da topbar: apenas a logo */
+.topbar .brand { display: inline-flex; align-items: center; gap: 10px; }
 .topbar .brand img {
     height: 32px; width: auto; object-fit: contain;
     filter: drop-shadow(0 1px 2px rgba(0,0,0,.25));
 }
-/* Texto auxiliar no topo (versão/ambiente) */
 .topbar .actions { color: #C7D0DD; font-size: 14px; opacity: .75; }
 
 /* ===== Ocultar Sidebar SÓ na Home ===== */
@@ -99,7 +96,7 @@ div.stButton > button:active { transform: translateY(0) scale(.98); background: 
 st.markdown(STYLES, unsafe_allow_html=True)
 
 # =============================================================================
-# TOPBAR (agora exibindo apenas a sua logo 'logo.png')
+# TOPBAR (apenas logo 'logo.png')
 # =============================================================================
 st.markdown(
     """
@@ -116,7 +113,6 @@ st.markdown(
 # =============================================================================
 # INTEGRAÇÃO COM DADOS REAIS
 # =============================================================================
-# Carrega base
 df = carregar_dados()
 
 # Detecta colunas de coordenadas e padroniza
@@ -157,7 +153,7 @@ cap_total = int((col_cap_bool | in_list_bool).sum())
 fmt = lambda n: f"{n:,}".replace(",", ".")
 
 # =============================================================================
-# HERO (título + descrição) — navegação com os MESMOS botões/switch_page que você já usa
+# HERO (com “Acesso rápido” FUNCIONAL dentro do card)
 # =============================================================================
 st.markdown(
     """
@@ -170,15 +166,13 @@ st.markdown(
         <div class="hero-right">
             <div class="section-title">⚙️ Acesso rápido</div>
             <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-                <div class="action-card">
+                <div class="action-card" id="ar_sigla">
                     <b>🔍 Buscar por SIGLA</b>
                     <p>Encontre rapidamente a ERB pelo identificador.</p>
-                    <!-- Botão real renderizado logo abaixo -->
                 </div>
-                <div class="action-card">
+                <div class="action-card" id="ar_end">
                     <b>🧭 Buscar por ENDEREÇO</b>
                     <p>Retorne as ERBs mais próximas via geocodificação.</p>
-                    <!-- Botão real renderizado logo abaixo -->
                 </div>
             </div>
         </div>
@@ -187,12 +181,14 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-# Botões reais no topo (reforço de UX)
-c1, c2 = st.columns(2)
-with c1:
-    top_sigla = st.button("🔍 Buscar por SIGLA", use_container_width=True, key="btn_sigla_top")
-with c2:
-    top_end = st.button("🧭 Buscar por ENDEREÇO", use_container_width=True, key="btn_end_top")
+# >>> Botões reais DENTRO do card “Acesso rápido”
+ar_col1, ar_col2 = st.columns(2)
+with ar_col1:
+    if st.button("🔎 Abrir busca por SIGLA", use_container_width=True, key="ar_btn_sigla"):
+        st.switch_page("pages/1_🔍_Busca_por_SIGLA.py")
+with ar_col2:
+    if st.button("🧭 Abrir busca por ENDEREÇO", use_container_width=True, key="ar_btn_end"):
+        st.switch_page("pages/2_🧭_Busca_por_ENDEREÇO.py")
 
 # =============================================================================
 # CARDS TÉCNICOS (com dados reais)
@@ -236,18 +232,16 @@ else:
     st.caption("Sem coluna **detentora** na base para gerar o gráfico.")
 
 # =============================================================================
-# AÇÕES (redundância pro usuário que rola a página)
+# AÇÕES (opcional como redundância para quem rola a página)
 # =============================================================================
 st.markdown("---")
 st.markdown('<div class="section-title">⚡ Ações</div>', unsafe_allow_html=True)
-
-col1, col2 = st.columns(2)
-with col1:
-    if st.button("🔍 Buscar por SIGLA", use_container_width=True, key="btn_sigla_bottom") or top_sigla:
+c1, c2 = st.columns(2)
+with c1:
+    if st.button("🔍 Buscar por SIGLA", use_container_width=True, key="btn_sigla_bottom"):
         st.switch_page("pages/1_🔍_Busca_por_SIGLA.py")
-
-with col2:
-    if st.button("🧭 Buscar por ENDEREÇO", use_container_width=True, key="btn_end_bottom") or top_end:
+with c2:
+    if st.button("🧭 Buscar por ENDEREÇO", use_container_width=True, key="btn_end_bottom"):
         st.switch_page("pages/2_🧭_Busca_por_ENDEREÇO.py")
 
 # =============================================================================
