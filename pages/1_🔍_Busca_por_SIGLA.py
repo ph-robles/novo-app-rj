@@ -1,14 +1,16 @@
 import streamlit as st
+import pandas as pd
 from utils.data_loader import carregar_dados, carregar_acessos
 from utils.helpers import normalizar_sigla, levenshtein
-from utils.cadeados_repo import buscar_cadeado, url_da_foto
 
 st.set_page_config(page_title="Buscar por SIGLA • Site Radar", page_icon="📡", layout="wide")
 
-# ... (seu CSS e sidebar iguais)
+# ==============================
+#   SIDEBAR PREMIUM COMPACTA (BLUR + MOBILE SAFE)
+# ==============================
+sidebar_style = """
+<style>
 
-<<<<<<< HEAD
-=======
 /* Sidebar geral (desktop) */
 [data-testid="stSidebar"] {
     background: rgba(20, 25, 35, 0.55) !important;
@@ -151,96 +153,137 @@ def _select_sugestao(value: str):
 # ==============================
 #   CONTEÚDO — BUSCA POR SIGLA
 # ==============================
->>>>>>> 5c380e73e06b21741f6a4fe5be918825f3c53c9c
 st.title("🔍 Buscar por SIGLA")
 
 df = carregar_dados()
 acessos = carregar_acessos()
 
-lista_siglas = sorted(df["sigla"].dropna().str.upper().unique().tolist())
+# Lista de siglas únicas (UPPER) para facilitar match
+lista_siglas = sorted(df["sigla"].dropna().astype(str).str.upper().unique().tolist())
 
-sig = st.text_input("Digite a SIGLA")
+# ---------- Estado inicial & hidratação ----------
+if "busca_sigla_input" not in st.session_state:
+    st.session_state["busca_sigla_input"] = ""
 
-def _get_val(dados, col):
-    try:
-        return dados[col].iloc[0]
-    except Exception:
-        return None
+# Se um chip foi clicado, no ciclo anterior guardamos em 'pending':
+if "busca_sigla_pending" in st.session_state:
+    st.session_state["busca_sigla_input"] = st.session_state.pop("busca_sigla_pending")
 
-if sig:
-    sig_n = normalizar_sigla(sig)
+# Se foi solicitado auto-executar a busca (por clique no chip), consome o flag aqui
+auto_trigger = st.session_state.pop("do_busca_sigla", False)
 
-    # Match exato
+# ---------- Container para resultados ----------
+result_ct = st.container()
+
+# ---------- Formulário com botão OK logo abaixo ----------
+with st.form("form_sigla", clear_on_submit=False):
+    st.session_state["busca_sigla_input"] = st.text_input(
+        "Digite a SIGLA do site/ERB",
+        value=st.session_state.get("busca_sigla_input", "")
+    )
+    submitted = st.form_submit_button("OK")  # <= Botão OK
+
+busca_val = st.session_state.get("busca_sigla_input", "").strip()
+
+# ---------- Sugestões (chips) ----------
+if busca_val:
+    sugestoes = _gerar_sugestoes(busca_val, lista_siglas, limite=8)
+    if sugestoes:
+        st.markdown("### 🔎 Sugestões (clique para buscar)")
+        st.markdown('<div id="chips-scope">', unsafe_allow_html=True)
+        cols = st.columns(max(2, min(6, len(sugestoes))))
+        for i, s in enumerate(sugestoes):
+            with cols[i % len(cols)]:
+                st.button(
+                    s,
+                    key=f"sug_{s}",
+                    on_click=_select_sugestao,
+                    args=(s,),
+                )
+        st.markdown("</div>", unsafe_allow_html=True)
+    else:
+        st.caption("Nenhuma sugestão encontrada para a sigla digitada.")
+
+# ---------- Executa busca se OK foi clicado OU se veio de um chip ----------
+do_search = (submitted or auto_trigger) and bool(busca_val)
+
+if do_search:
+    busca_norm = normalizar_sigla(busca_val)
+
+    # 1) Match exato (normalizado)
     achada = None
     for s in lista_siglas:
-        if normalizar_sigla(s) == sig_n:
+        if normalizar_sigla(s) == busca_norm:
             achada = s
             break
 
-    # Fuzzy
+    # 2) Fuzzy leve (menor distância; <=1 geralmente cobre "faltando 1 letra")
     if not achada and lista_siglas:
-        achada = min(lista_siglas, key=lambda x: levenshtein(normalizar_sigla(x), sig_n))
+        dists = [(s, levenshtein(normalizar_sigla(s), busca_norm)) for s in lista_siglas]
+        # Ordena por distância e depois por ordem alfabética
+        dists.sort(key=lambda x: (x[1], x[0]))
+        achada = dists[0][0] if dists else None
 
-    if achada:
-        st.success(f"SIGLA encontrada: **{achada}**")
-        dados = df[df["sigla"].str.upper() == achada]
+    with result_ct:
+        if achada:
+            st.success(f"SIGLA encontrada: **{achada}**")
 
-        # Exibe a grid original (se quiser manter)
-        st.dataframe(dados, use_container_width=True)
+            dados = df[df["sigla"].astype(str).str.upper() == achada].copy()
 
-        # ========== CARD DE DETALHES (ajuste os nomes das colunas conforme seu df) ==========
-        nome_site = _get_val(dados, "nome") or _get_val(dados, "site") or ""
-        cidade = _get_val(dados, "cidade") or ""
-        detentora = _get_val(dados, "detentora") or _get_val(dados, "operadora") or "—"
-        endereco = _get_val(dados, "endereco") or _get_val(dados, "logradouro") or "—"
-        capacitado = _get_val(dados, "capacitado") or "—"
-        lat = _get_val(dados, "lat") or _get_val(dados, "latitude")
-        lon = _get_val(dados, "lon") or _get_val(dados, "longitude")
-        coords = f"{lat}, {lon}" if lat and lon else "—"
-
-        st.markdown("### 📍 Detalhes")
-        st.markdown(
-            f"""
-**{achada} — {cidade} - {nome_site or ""}**
-
-- 🏢 **Detentora:** {detentora}  
-- 📌 **Endereço:** {endereco}  
-- 🧰 **Capacitado:** {str(capacitado).upper()}  
-- 🧭 **Coordenadas:** {coords}
-"""
-        )
-
-        # Técnicos
-        if acessos is not None and not acessos.empty:
-            tecs = (
-                acessos[acessos["sigla"].str.upper() == achada]["tecnico"]
-                .dropna().unique().tolist()
-            )
-            if tecs:
-                st.info("👷 Técnicos liberados:\n" + "\n".join(f"- {t}" for t in tecs))
+            # Tabela resumida
+            cols_show = [c for c in ["sigla", "nome", "detentora", "endereco", "lat", "lon", "capacitado"] if c in dados.columns]
+            if cols_show:
+                st.dataframe(dados[cols_show], use_container_width=True)
             else:
-                st.info("Nenhum técnico cadastrado para esta SIGLA.")
+                st.dataframe(dados, use_container_width=True)
 
-        # 🔒 CADEADO
-        st.markdown("### 🔒 Cadeado")
-        cadeado = buscar_cadeado(achada)
-        if cadeado:
-            tipo = cadeado.get("tipo", "—")
-            obs = cadeado.get("observacao", "")
-            st.markdown(f"**Tipo de cadeado:** {tipo}")
-            if obs:
-                st.caption(f"Observação: {obs}")
+            # Cartões de detalhes (um por linha)
+            st.markdown("### 📍 Detalhes")
+            for _, row in dados.iterrows():
+                sigla_row = str(row.get("sigla", "—"))
+                nome_row = str(row.get("nome", "—"))
+                det_row  = str(row.get("detentora", "—")) if pd.notna(row.get("detentora")) else "—"
+                end_row  = str(row.get("endereco", "—"))
+                lat_val  = row.get("lat")
+                lon_val  = row.get("lon")
+                cap_row  = str(row.get("capacitado", "—")) if pd.notna(row.get("capacitado")) else "—"
 
-            if cadeado.get("foto_path"):
-                url = url_da_foto(cadeado["foto_path"])
-                if url:
-                    # Mostra a imagem e o link
-                    st.image(url, caption=f"Cadeado - {achada}", use_container_width=True)
-                    st.markdown(f"[🔗 Abrir imagem]({url})")
+                st.markdown(f"**{sigla_row} — {nome_row}**")
+                st.markdown(
+                    f"🏢 **Detentora:** {det_row}  \n"
+                    f"📌 **Endereço:** {end_row}  \n"
+                    f"🧰 **Capacitado:** {cap_row}  \n"
+                    f"🧭 **Coordenadas:** {_format_coord(lat_val)}, {_format_coord(lon_val)}"
+                )
+
+                # Botão Google Maps (se coordenadas válidas)
+                try:
+                    if pd.notna(lat_val) and pd.notna(lon_val):
+                        lat_f = float(lat_val)
+                        lon_f = float(lon_val)
+                        maps_url = f"https://www.google.com/maps/search/?api=1&query={lat_f},{lon_f}"
+                        st.link_button("🗺️ Ver no Google Maps", maps_url, type="primary")
+                except Exception:
+                    pass
+
+                # Técnicos com acesso liberado (se houver aba acessos)
+                if acessos is not None and not acessos.empty:
+                    tecs = (
+                        acessos[acessos["sigla"].astype(str).str.upper() == sigla_row.upper()]
+                        .get("tecnico", pd.Series(dtype="string"))
+                        .dropna()
+                        .unique()
+                        .tolist()
+                    )
+                    if tecs:
+                        st.info("👷 **Técnicos com acesso:**\n" + "\n".join([f"- {t}" for t in tecs]))
+                    else:
+                        st.info("👷 Nenhum técnico com acesso cadastrado para esta SIGLA.")
                 else:
-                    st.caption("Não foi possível gerar a URL da imagem (verifique bucket/políticas).")
-        else:
-            st.info("Nenhum registro de cadeado para esta SIGLA ainda.")
+                    st.caption("ℹ️ Aba `acessos` não encontrada ou sem dados.")
 
-    else:
-        st.error("Nenhuma SIGLA compatível encontrada.")
+                st.markdown("---")
+        else:
+            st.error("Nenhuma SIGLA compatível encontrada.")
+else:
+    st.caption("Dica: digite parte da sigla e use as sugestões para agilizar a busca.")
