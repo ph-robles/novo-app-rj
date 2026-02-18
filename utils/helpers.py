@@ -1,46 +1,34 @@
-import unicodedata
-import numpy as np
-import pandas as pd
+# utils/helpers.py
+import re
 
-def strip_accents(s: str):
-    if not isinstance(s, str):
-        return s
-    return "".join(c for c in unicodedata.normalize("NFD", s)
-                   if unicodedata.category(c) != "Mn")
-
-def normalizar_sigla(sigla: str) -> str:
-    if not isinstance(sigla, str):
+def normalizar_sigla(s: str) -> str:
+    if s is None:
         return ""
-    s = sigla.strip().upper()
-    s = s.replace(" ", "").replace("-", "")
-    if s.startswith("RJ"):
-        s = s[2:]
-    return s
+    s = str(s).strip().upper()
+    # remove caracteres não alfanuméricos (opcional)
+    s = re.sub(r"[^0-9A-ZÁÀÂÃÉÈÊÍÌÎÓÒÔÕÚÙÛÇ]", "", s)
+    # normaliza acentos simples
+    TR = str.maketrans("ÁÀÂÃÉÈÊÍÌÎÓÒÔÕÚÙÛÇ", "AAAAEEEIIIOOOOUUUC")
+    return s.translate(TR)
 
 def levenshtein(a: str, b: str) -> int:
+    # DP simples, suficiente para strings curtas
     if a == b:
         return 0
-    if not a:
+    if len(a) == 0:
         return len(b)
-    if not b:
+    if len(b) == 0:
         return len(a)
-    prev = list(range(len(b) + 1))
-    for i, ca in enumerate(a, 1):
-        curr = [i]
-        for j, cb in enumerate(b, 1):
-            ins = prev[j] + 1
-            dele = curr[j-1] + 1
-            sub = prev[j-1] + (ca != cb)
-            curr.append(min(ins, dele, sub))
-        prev = curr
-    return prev[-1]
-
-def haversine_km(lat1, lon1, lat2, lon2):
-    R = 6371.0088
-    lat1 = np.radians(lat1); lon1 = np.radians(lon1)
-    lat2 = np.radians(lat2); lon2 = np.radians(lon2)
-
-    dlat = lat2 - lat1
-    dlon = lon2 - lon1
-    a = np.sin(dlat/2)**2 + np.cos(lat1)*np.cos(lat2)*np.sin(dlon/2)**2
-    return R * 2 * np.arcsin(np.sqrt(a))
+    dp = list(range(len(b)+1))
+    for i, ca in enumerate(a, start=1):
+        prev, dp[0] = dp[0], i
+        for j, cb in enumerate(b, start=1):
+            cur = dp[j]
+            cost = 0 if ca == cb else 1
+            dp[j] = min(
+                dp[j] + 1,       # deleção
+                dp[j-1] + 1,     # inserção
+                prev + cost      # substituição
+            )
+            prev = cur
+    return dp[-1]
