@@ -19,7 +19,7 @@ st.markdown(hide_menu_style, unsafe_allow_html=True)
 # LOGO (opcional)
 st.image("logo.png", width=220)
 
-st.title("📡 Site Radar")
+st.title("📡 Localizar Site/ERB")
 st.markdown("### Selecione uma opção abaixo:")
 
 # CSS PREMIUM PARA BOTÕES DA HOME
@@ -63,3 +63,12 @@ with col1:
 with col2:
     if st.button("🧭 Buscar por ENDEREÇO", use_container_width=True):
         st.switch_page("pages/2_🧭_Busca_por_ENDEREÇO.py")
+
+
+st.markdown("---")
+st.markdown(
+    '<div class="footer">❤️ Desenvolvido por Raphael Robles — © 2026 • Todos os direitos reservados 🚀</div>',
+    unsafe_allow_html=True
+)
+
+
