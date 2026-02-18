@@ -65,4 +65,4 @@ with col2:
 st.markdown("---")
 st.markdown(
     '<div class="footer">❤️ Desenvolvido por Raphael Robles — © 2026 • Todos os direitos reservados 🚀</div>',
-    unsafe_allow_html=True
+    unsafe_allow_html=True)
