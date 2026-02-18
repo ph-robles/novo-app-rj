@@ -43,7 +43,11 @@ O objetivo é simples:
 Criar soluções inteligentes que tornem o trabalho técnico mais eficiente, organizado e produtivo.
 
 ---
-
+            
+### Stay hungry, stay foolish! 🚀  
+          
+---
+            
 ### ❤️ Obrigado por utilizar o TowerLink!
 """)
 

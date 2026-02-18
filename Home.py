@@ -1,9 +1,6 @@
 import streamlit as st
 
-from dotenv import load_dotenv
-load_dotenv()
-
-st.set_page_config(page_title="Site Radar", page_icon="📡", layout="wide")
+st.set_page_config(page_title="TowerLink • Localizar ERB", page_icon="📡", layout="wide")
 
 # OCULTAR SIDEBAR SÓ NA HOME
 hide_menu_style = """
@@ -16,13 +13,13 @@ hide_menu_style = """
 """
 st.markdown(hide_menu_style, unsafe_allow_html=True)
 
-# LOGO (opcional)
+# LOGO
 st.image("logo.png", width=220)
 
 st.title("📡 Localizar Site/ERB")
 st.markdown("### Selecione uma opção abaixo:")
 
-# CSS PREMIUM PARA BOTÕES DA HOME
+# CSS PREMIUM PARA BOTÕES
 button_style = """
 <style>
 
@@ -64,11 +61,13 @@ with col2:
     if st.button("🧭 Buscar por ENDEREÇO", use_container_width=True):
         st.switch_page("pages/2_🧭_Busca_por_ENDEREÇO.py")
 
-
 st.markdown("---")
+
+# LINK PARA A PÁGINA SOBRE
 st.markdown(
-    '<div class="footer">❤️ Desenvolvido por Raphael Robles — © 2026 • Todos os direitos reservados 🚀</div>',
+    '<div style="text-align:center; margin-top:20px;">'
+    '❤️ Desenvolvido por Raphael Robles • '
+    '<a href="/3_ℹ️_Sobre" target="_self">Sobre o TowerLink</a>'
+    '</div>',
     unsafe_allow_html=True
 )
-
-
