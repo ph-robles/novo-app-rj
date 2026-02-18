@@ -90,7 +90,7 @@ STYLES = """
     box-shadow: 0 10px 22px rgba(31,111,235,.22);
 }
 
-/* ===== Fallback: oculta totalmente os botões (mantêm funcionalidade) ===== */
+/* ===== Fallback: botões ocultos (mantêm funcionalidade) ===== */
 .fallback-actions [data-testid="stButton"] button {
     position: absolute !important;
     opacity: 0 !important;
@@ -102,6 +102,23 @@ STYLES = """
     pointer-events: none !important;
     overflow: hidden !important;
     clip: rect(0,0,0,0) !important;
+}
+
+/* ===== Visual dos cards no fallback (divs clicáveis por JS) ===== */
+.fallback-card {
+    background: linear-gradient(180deg, rgba(31,111,235,0.10) 0%, rgba(31,111,235,0.08) 100%);
+    border: 1px solid rgba(31,111,235,0.25);
+    color: #E6ECF3;
+    border-radius: 14px;
+    padding: 16px;
+    transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease, background .15s ease;
+    cursor: pointer;
+}
+.fallback-card:hover {
+    transform: translateY(-2px);
+    background: linear-gradient(180deg, rgba(31,111,235,0.14) 0%, rgba(31,111,235,0.12) 100%);
+    border-color: rgba(31,111,235,0.4);
+    box-shadow: 0 10px 22px rgba(31,111,235,.22);
 }
 
 /* ===== Rodapé ===== */
@@ -117,7 +134,7 @@ st.markdown(
     """
     <div class="topbar">
         <div class="brand">
-            <img src="logo.png" alt="Site Radar">
+            <img src="logo.png" alt="logo">
         </div>
         <div class="actions">v1.0 • Ambiente de Produção</div>
     </div>
@@ -161,7 +178,7 @@ cap_total    = int((col_cap_bool | in_list_bool).sum())
 fmt = lambda n: f"{n:,}".replace(",", ".")
 
 # =============================================================================
-# HERO (com “Acesso rápido” — cards clicáveis via st.page_link ou fallback oculto)
+# HERO (com “Acesso rápido” — cards clicáveis via st.page_link ou fallback com JS)
 # =============================================================================
 left, right = st.columns([1.2, 0.8])
 with left:
@@ -183,6 +200,7 @@ with right:
     c1, c2 = st.columns(2)
 
     if has_page_link:
+        # ====== CAMINHO 1: Streamlit recente — usa st.page_link (card 100% link) ======
         with c1:
             with st.container(key="card_sigla", border=False):
                 st.markdown('<div class="page-link-card">', unsafe_allow_html=True)
@@ -202,36 +220,87 @@ with right:
                 st.markdown('</div>', unsafe_allow_html=True)
 
     else:
-        # --- Fallback para versões antigas: cria botões (agora invisíveis por CSS) ---
+        # ====== CAMINHO 2: Fallback — botão oculto + card visual + JS para simular clique ======
         st.markdown('<div class="fallback-actions">', unsafe_allow_html=True)
 
+        # Card SIGLA
         with c1:
             st.markdown(
-                '<div class="page-link-card"><div><a href="#" aria-label="Buscar por SIGLA" '
-                'title="Buscar por SIGLA" style="display:block;pointer-events:none;'
-                'background: linear-gradient(180deg, rgba(31,111,235,0.10) 0%, rgba(31,111,235,0.08) 100%);'
-                'border: 1px solid rgba(31,111,235,0.25); color:#E6ECF3; border-radius:14px; padding:16px;">'
+                '<div class="fallback-card" id="card-sigla">'
                 '<strong>🔍 Buscar por SIGLA</strong><br/>Encontre rapidamente a ERB pelo identificador.'
-                '</a></div></div>',
+                '</div>',
                 unsafe_allow_html=True
             )
-            # Botão funcional para acionar a navegação — oculto por CSS
-            if st.button("Abrir SIGLA", key="open_sigla"):
+            # Botão funcional (oculto por CSS) — acionado via JS
+            sigla_clicked = st.button("Abrir SIGLA", key="open_sigla")
+            if sigla_clicked:
                 st.switch_page("pages/1_🔍_Busca_por_SIGLA.py")
 
+        # Card ENDEREÇO
         with c2:
             st.markdown(
-                '<div class="page-link-card"><div><a href="#" aria-label="Buscar por ENDEREÇO" '
-                'title="Buscar por ENDEREÇO" style="display:block;pointer-events:none;'
-                'background: linear-gradient(180deg, rgba(31,111,235,0.10) 0%, rgba(31,111,235,0.08) 100%);'
-                'border: 1px solid rgba(31,111,235,0.25); color:#E6ECF3; border-radius:14px; padding:16px;">'
+                '<div class="fallback-card" id="card-end">'
                 '<strong>🧭 Buscar por ENDEREÇO</strong><br/>Retorne as ERBs mais próximas via geocodificação.'
-                '</a></div></div>',
+                '</div>',
                 unsafe_allow_html=True
             )
-            # Botão funcional para acionar a navegação — oculto por CSS
-            if st.button("Abrir ENDEREÇO", key="open_end"):
+            end_clicked = st.button("Abrir ENDEREÇO", key="open_end")
+            if end_clicked:
                 st.switch_page("pages/2_🧭_Busca_por_ENDEREÇO.py")
+
+        # --- Injeta JS para simular o clique no botão quando o card for pressionado ---
+        import streamlit.components.v1 as components
+        components.html(
+            """
+            <script>
+            (function () {
+              // Mapeia cards -> ids de botões do Streamlit
+              const map = {
+                'card-sigla': 'open_sigla',
+                'card-end':   'open_end'
+              };
+
+              // Função para clicar programaticamente no botão do Streamlit
+              function clickStreamlitButton(streamlitKey) {
+                // Botões do Streamlit possuem data-testid="stButton"
+                const buttons = window.parent.document.querySelectorAll('[data-testid="stButton"] button');
+                for (const btn of buttons) {
+                  // Cada botão recebe um rótulo; como estão ocultos, procuramos pelo atributo aria-label quando existir
+                  // e, como fallback, pelo texto interno
+                  const label = (btn.getAttribute('aria-label') || btn.textContent || '').trim();
+                  if (!label) continue;
+                  // Como usamos chaves únicas "open_sigla" e "open_end", ancoramos pelo texto visível do botão:
+                  if (label.includes(streamlitKey) || btn.innerText.includes(streamlitKey)) {
+                    btn.click();
+                    return true;
+                  }
+                }
+                // Fallback alternativo: tenta localizar pelo data-baseweb (quando presente)
+                return false;
+              }
+
+              // Adiciona listeners aos cards
+              Object.entries(map).forEach(([cardId, key]) => {
+                const el = document.getElementById(cardId);
+                if (!el) return;
+
+                // Clique / teclado / toque
+                const handler = (ev) => {
+                  ev.preventDefault();
+                  // Dispara o clique no botão invisível correspondente
+                  clickStreamlitButton(key);
+                };
+                el.addEventListener('click', handler);
+                el.addEventListener('keydown', (e) => {
+                  if (e.key === 'Enter' || e.key === ' ') handler(e);
+                });
+              });
+            })();
+            </script>
+            """,
+            height=0,
+            width=0,
+        )
 
         st.markdown('</div>', unsafe_allow_html=True)  # fecha .fallback-actions
 
