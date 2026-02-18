@@ -11,7 +11,7 @@ from utils.data_loader import carregar_dados, carregar_capacitados_lista
 st.set_page_config(page_title="Home • Site Radar", page_icon="📡", layout="wide")
 
 # =============================================================================
-# ESTILOS GERAIS (Topbar, Hero, Cards)
+# ESTILOS GERAIS (Topbar, Hero, Cards) + Ocultar sidebar só na Home
 # =============================================================================
 STYLES = """
 <style>
@@ -74,23 +74,7 @@ STYLES = """
 /* ===== Seções ===== */
 .section-title { font-size: 18px; font-weight: 800; margin: 14px 0 10px 0; }
 
-/* ===== Cartões clicáveis ===== */
-a.card-link { text-decoration: none; }
-a.card-link .action-card {
-    background: linear-gradient(180deg, rgba(31,111,235,0.10) 0%, rgba(31,111,235,0.08) 100%);
-    border: 1px solid rgba(31,111,235,0.25); border-radius: 14px; padding: 16px; color: #E6ECF3;
-    transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease, background .15s ease;
-    display: block;
-}
-a.card-link .action-card:hover {
-    transform: translateY(-2px);
-    background: linear-gradient(180deg, rgba(31,111,235,0.14) 0%, rgba(31,111,235,0.12) 100%);
-    border-color: rgba(31,111,235,0.4);
-    box-shadow: 0 10px 22px rgba(31,111,235,.22);
-}
-.action-card p { color: #BFD2F6; font-size: 13.5px; margin: 4px 0 0 0; }
-
-/* ===== Link nativo (st.page_link) visual como card ===== */
+/* ===== Cartões clicáveis com st.page_link (Streamlit >= 1.33) ===== */
 .page-link-card > div > a {
     display:block; width:100%; height:100%;
     background: linear-gradient(180deg, rgba(31,111,235,0.10) 0%, rgba(31,111,235,0.08) 100%) !important;
@@ -104,6 +88,20 @@ a.card-link .action-card:hover {
     background: linear-gradient(180deg, rgba(31,111,235,0.14) 0%, rgba(31,111,235,0.12) 100%) !important;
     border-color: rgba(31,111,235,0.4) !important;
     box-shadow: 0 10px 22px rgba(31,111,235,.22);
+}
+
+/* ===== Fallback: oculta totalmente os botões (mantêm funcionalidade) ===== */
+.fallback-actions [data-testid="stButton"] button {
+    position: absolute !important;
+    opacity: 0 !important;
+    width: 0 !important;
+    height: 0 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    border: 0 !important;
+    pointer-events: none !important;
+    overflow: hidden !important;
+    clip: rect(0,0,0,0) !important;
 }
 
 /* ===== Rodapé ===== */
@@ -163,7 +161,7 @@ cap_total    = int((col_cap_bool | in_list_bool).sum())
 fmt = lambda n: f"{n:,}".replace(",", ".")
 
 # =============================================================================
-# HERO (com “Acesso rápido” — CARDS CLICÁVEIS via st.page_link ou fallback)
+# HERO (com “Acesso rápido” — cards clicáveis via st.page_link ou fallback oculto)
 # =============================================================================
 left, right = st.columns([1.2, 0.8])
 with left:
@@ -181,13 +179,11 @@ with left:
 with right:
     st.markdown('<div class="hero-right"><div class="section-title">⚙️ Acesso rápido</div>', unsafe_allow_html=True)
 
-    # Tenta usar st.page_link (Streamlit >= 1.33)
     has_page_link = hasattr(st, "page_link")
     c1, c2 = st.columns(2)
 
     if has_page_link:
         with c1:
-            # Card SIGLA como link nativo estilizado
             with st.container(key="card_sigla", border=False):
                 st.markdown('<div class="page-link-card">', unsafe_allow_html=True)
                 st.page_link(
@@ -206,21 +202,40 @@ with right:
                 st.markdown('</div>', unsafe_allow_html=True)
 
     else:
-        # Fallback: botões invisíveis que chamam st.switch_page, mantendo o "card look"
-        def _card(label_md: str, page_path: str, key: str):
-            st.markdown(f'<div class="action-card">{label_md}</div>', unsafe_allow_html=True)
-            # botão com rótulo curto para ocupar pouco espaço; estilize para parecer invisível se quiser
-            if st.button("Abrir", key=key):
-                st.switch_page(page_path)
+        # --- Fallback para versões antigas: cria botões (agora invisíveis por CSS) ---
+        st.markdown('<div class="fallback-actions">', unsafe_allow_html=True)
 
         with c1:
-            _card("**🔍 Buscar por SIGLA**  <br/>Encontre rapidamente a ERB pelo identificador.", 
-                  "pages/1_🔍_Busca_por_SIGLA.py", key="open_sigla")
-        with c2:
-            _card("**🧭 Buscar por ENDEREÇO**  <br/>Retorne as ERBs mais próximas via geocodificação.", 
-                  "pages/2_🧭_Busca_por_ENDEREÇO.py", key="open_end")
+            st.markdown(
+                '<div class="page-link-card"><div><a href="#" aria-label="Buscar por SIGLA" '
+                'title="Buscar por SIGLA" style="display:block;pointer-events:none;'
+                'background: linear-gradient(180deg, rgba(31,111,235,0.10) 0%, rgba(31,111,235,0.08) 100%);'
+                'border: 1px solid rgba(31,111,235,0.25); color:#E6ECF3; border-radius:14px; padding:16px;">'
+                '<strong>🔍 Buscar por SIGLA</strong><br/>Encontre rapidamente a ERB pelo identificador.'
+                '</a></div></div>',
+                unsafe_allow_html=True
+            )
+            # Botão funcional para acionar a navegação — oculto por CSS
+            if st.button("Abrir SIGLA", key="open_sigla"):
+                st.switch_page("pages/1_🔍_Busca_por_SIGLA.py")
 
-    st.markdown('</div>', unsafe_allow_html=True)  # fecha hero-right
+        with c2:
+            st.markdown(
+                '<div class="page-link-card"><div><a href="#" aria-label="Buscar por ENDEREÇO" '
+                'title="Buscar por ENDEREÇO" style="display:block;pointer-events:none;'
+                'background: linear-gradient(180deg, rgba(31,111,235,0.10) 0%, rgba(31,111,235,0.08) 100%);'
+                'border: 1px solid rgba(31,111,235,0.25); color:#E6ECF3; border-radius:14px; padding:16px;">'
+                '<strong>🧭 Buscar por ENDEREÇO</strong><br/>Retorne as ERBs mais próximas via geocodificação.'
+                '</a></div></div>',
+                unsafe_allow_html=True
+            )
+            # Botão funcional para acionar a navegação — oculto por CSS
+            if st.button("Abrir ENDEREÇO", key="open_end"):
+                st.switch_page("pages/2_🧭_Busca_por_ENDEREÇO.py")
+
+        st.markdown('</div>', unsafe_allow_html=True)  # fecha .fallback-actions
+
+    st.markdown('</div>', unsafe_allow_html=True)  # fecha .hero-right
 
 # =============================================================================
 # CARDS TÉCNICOS (com dados reais)
