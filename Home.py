@@ -61,72 +61,8 @@ with col2:
     if st.button("🧭 Buscar por ENDEREÇO", use_container_width=True):
         st.switch_page("pages/2_🧭_Busca_por_ENDEREÇO.py")
 
-=============================================================================
-# INTEGRAÇÃO COM DADOS REAIS
-# =============================================================================
-df = carregar_dados()
 
-# Detecta colunas de coordenadas e padroniza
-lat_col, lon_col = None, None
-for cand in (("lat", "lon"), ("latitude", "longitude"), ("Lat", "Lon"), ("LAT", "LON")):
-    if all(c in df.columns for c in cand):
-        lat_col, lon_col = cand
-        break
-
-total_erbs = int(len(df))
-if lat_col and lon_col:
-    df_coords = df.dropna(subset=[lat_col, lon_col]).copy()
-    com_coord = int(len(df_coords))
-else:
-    df_coords = pd.DataFrame(columns=["lat", "lon"])
-    com_coord = 0
-
-YES = {"sim","s","yes","y","1","true","verdadeiro","ok","ativo","habilitado","cap","capacitado"}
-def _is_yes(v) -> bool:
-    try: return str(v).strip().lower() in YES
-    except Exception: return False
-
-cap_lista = carregar_capacitados_lista() or set()
-if not isinstance(cap_lista, (set, list, tuple)): cap_lista = set(cap_lista)
-
-sigla_upper  = df["sigla"].astype(str).str.upper() if "sigla" in df.columns else pd.Series([""]*len(df))
-col_cap_bool = df["capacitado"].apply(_is_yes) if "capacitado" in df.columns else pd.Series([False]*len(df))
-in_list_bool = sigla_upper.isin(cap_lista) if len(cap_lista) > 0 else pd.Series([False]*len(df))
-cap_total    = int((col_cap_bool | in_list_bool).sum())
-
-fmt = lambda n: f"{n:,}".replace(",", ".")
-
-
-
-=============================================================================
-# CARDS TÉCNICOS (dados reais)
-# =============================================================================
-st.markdown('<div class="section-title">📊 Visão geral</div>', unsafe_allow_html=True)
-st.markdown(
-    f"""
-    <div class="tech-grid">
-        <div class="tech-card">
-            <h3>Total de ERBs</h3>
-            <div class="tech-number">{fmt(total_erbs)}</div>
-            <div class="tech-sub">Registros carregados</div>
-        </div>
-        <div class="tech-card">
-            <h3>Com coordenadas</h3>
-            <div class="tech-number">{fmt(com_coord)}</div>
-            <div class="tech-sub">Lat/Lon válidos</div>
-        </div>
-        <div class="tech-card">
-            <h3>Capacitados</h3>
-            <div class="tech-number">{fmt(cap_total)}</div>
-            <div class="tech-sub">Coluna <code>capacitado</code> + lista auxiliar</div>
-        </div>
-    </div>
-    """,
-    unsafe_allow_html=True
-)
-
-
-
+st.markdown("---")
 st.markdown(
     '<div class="footer">❤️ Desenvolvido por Raphael Robles — © 2026 • Todos os direitos reservados 🚀</div>',
     unsafe_allow_html=True
