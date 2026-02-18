@@ -10,7 +10,6 @@ st.set_page_config(page_title="Buscar por SIGLA • Site Radar", page_icon="📡
 # ==============================
 sidebar_style = """
 <style>
-
 /* Sidebar geral (desktop) */
 [data-testid="stSidebar"] {
     background: rgba(20, 25, 35, 0.55) !important;
@@ -42,7 +41,7 @@ sidebar_style = """
         padding-right: 6px;
     }
 
-    /* A logo se ajusta para 250px (pedido) */
+    /* A logo se ajusta para 80px */
     .sidebar-logo img {
         width: 80px !important;
     }
@@ -77,12 +76,12 @@ sidebar_style = """
 #chips-scope div[data-testid="stButton"] > button:active {
   transform: translateY(0px) scale(.98);
 }
-/* dark mode */
-:root .st-dark #chips-scope div[data-testid="stButton"] > button {
+/* dark mode (compatível) */
+html[data-theme="dark"] #chips-scope div[data-testid="stButton"] > button {
   border-color: rgba(250, 250, 250, 0.18);
   background: rgba(250, 250, 250, 0.06);
 }
-:root .st-dark #chips-scope div[data-testid="stButton"] > button:hover {
+html[data-theme="dark"] #chips-scope div[data-testid="stButton"] > button:hover {
   border-color: rgba(250, 250, 250, 0.35);
   background: rgba(250, 250, 250, 0.12);
 }
@@ -93,7 +92,10 @@ st.markdown(sidebar_style, unsafe_allow_html=True)
 # Sidebar com logo
 with st.sidebar:
     st.markdown('<div class="sidebar-logo">', unsafe_allow_html=True)
-    st.image("logo.png", width=300)
+    try:
+        st.image("logo.png", width=300)
+    except Exception:
+        st.write("📡 **Site Radar**")
     st.markdown("</div>", unsafe_allow_html=True)
 
 # ==============================
@@ -256,25 +258,28 @@ if do_search:
                     f"🧭 **Coordenadas:** {_format_coord(lat_val)}, {_format_coord(lon_val)}"
                 )
 
-                # Botão Google Maps (se coordenadas válidas)
+                # Botão/Link Google Maps (se coordenadas válidas)
                 try:
                     if pd.notna(lat_val) and pd.notna(lon_val):
                         lat_f = float(lat_val)
                         lon_f = float(lon_val)
                         maps_url = f"https://www.google.com/maps/search/?api=1&query={lat_f},{lon_f}"
-                        st.link_button("🗺️ Ver no Google Maps", maps_url, type="primary")
+                        # Fallback caso st.link_button não exista
+                        if hasattr(st, "link_button"):
+                            st.link_button("🗺️ Ver no Google Maps", maps_url, type="primary")
+                        else:
+                            st.markdown(f"[🗺️ Ver no Google Maps]({maps_url})")
                 except Exception:
                     pass
 
                 # Técnicos com acesso liberado (se houver aba acessos)
-                if acessos is not None and not acessos.empty:
-                    tecs = (
+                if acessos is not None and not acessos.empty and "sigla" in acessos.columns:
+                    tecs_series = (
                         acessos[acessos["sigla"].astype(str).str.upper() == sigla_row.upper()]
                         .get("tecnico", pd.Series(dtype="string"))
                         .dropna()
-                        .unique()
-                        .tolist()
                     )
+                    tecs = tecs_series.unique().tolist() if not tecs_series.empty else []
                     if tecs:
                         st.info("👷 **Técnicos com acesso:**\n" + "\n".join([f"- {t}" for t in tecs]))
                     else:
