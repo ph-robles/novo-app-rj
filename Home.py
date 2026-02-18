@@ -11,24 +11,23 @@ from utils.data_loader import carregar_dados, carregar_capacitados_lista
 st.set_page_config(page_title="Home • Site Radar", page_icon="📡", layout="wide")
 
 # =============================================================================
-# ESTILOS GERAIS (Topbar, Hero, Cards, Botões) + Ocultar sidebar só na Home
+# ESTILOS GERAIS (Topbar, Hero, Cards)
 # =============================================================================
 STYLES = """
 <style>
 /* Empurra conteúdo por causa da topbar fixa */
 .main .block-container { padding-top: 86px; }
 
-/* ===== Topbar fixa técnica ===== */
+/* ===== Topbar fixa ===== */
 .topbar {
-    position: fixed; top: 0; left: 0;
-    width: 100%; height: 64px;
+    position: fixed; top: 0; left: 0; width: 100%; height: 64px;
     background: linear-gradient(90deg, rgba(15,18,26,0.85) 0%, rgba(22,27,37,0.85) 100%);
     backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
     border-bottom: 1px solid rgba(255,255,255,0.12);
     display: flex; align-items: center; justify-content: space-between;
     padding: 0 16px; z-index: 9999;
 }
-/* Branding da topbar: apenas a logo */
+/* Branding da topbar: logo */
 .topbar .brand { display: inline-flex; align-items: center; gap: 10px; }
 .topbar .brand img {
     height: 32px; width: auto; object-fit: contain;
@@ -53,6 +52,8 @@ STYLES = """
 }
 .hero h1 { font-size: 30px; font-weight: 800; margin: 0 0 8px 0; }
 .hero p { font-size: 15px; color: #B8C3D1; margin: 0; }
+
+/* ===== Coluna direita do hero ===== */
 .hero-right {
     background: radial-gradient(1200px 400px at 30% -20%, rgba(31,111,235,0.18), rgba(0,0,0,0) 60%),
                 linear-gradient(180deg, rgba(22,28,41,0.8) 0%, rgba(18,22,33,0.8) 100%);
@@ -89,6 +90,22 @@ a.card-link .action-card:hover {
 }
 .action-card p { color: #BFD2F6; font-size: 13.5px; margin: 4px 0 0 0; }
 
+/* ===== Link nativo (st.page_link) visual como card ===== */
+.page-link-card > div > a {
+    display:block; width:100%; height:100%;
+    background: linear-gradient(180deg, rgba(31,111,235,0.10) 0%, rgba(31,111,235,0.08) 100%) !important;
+    border: 1px solid rgba(31,111,235,0.25) !important;
+    color: #E6ECF3 !important;
+    border-radius: 14px; padding: 16px; text-decoration:none !important;
+    transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease, background .15s ease;
+}
+.page-link-card > div > a:hover {
+    transform: translateY(-2px);
+    background: linear-gradient(180deg, rgba(31,111,235,0.14) 0%, rgba(31,111,235,0.12) 100%) !important;
+    border-color: rgba(31,111,235,0.4) !important;
+    box-shadow: 0 10px 22px rgba(31,111,235,.22);
+}
+
 /* ===== Rodapé ===== */
 .footer { color: #9EABBB; font-size: 12.5px; text-align: center; margin-top: 16px; }
 </style>
@@ -96,13 +113,13 @@ a.card-link .action-card:hover {
 st.markdown(STYLES, unsafe_allow_html=True)
 
 # =============================================================================
-# TOPBAR (apenas logo 'logo.png')
+# TOPBAR (logo)
 # =============================================================================
 st.markdown(
     """
     <div class="topbar">
         <div class="brand">
-            <img src="logo.png" alt="logo">
+            <img src="logo.png" alt="Site Radar">
         </div>
         <div class="actions">v1.0 • Ambiente de Produção</div>
     </div>
@@ -122,9 +139,7 @@ for cand in (("lat", "lon"), ("latitude", "longitude"), ("Lat", "Lon"), ("LAT", 
         lat_col, lon_col = cand
         break
 
-# Contadores básicos
 total_erbs = int(len(df))
-
 if lat_col and lon_col:
     df_coords = df.dropna(subset=[lat_col, lon_col]).copy()
     com_coord = int(len(df_coords))
@@ -132,59 +147,80 @@ else:
     df_coords = pd.DataFrame(columns=["lat", "lon"])
     com_coord = 0
 
-# Capacitados: coluna 'capacitado' (sim/não) OU presença na lista auxiliar
 YES = {"sim","s","yes","y","1","true","verdadeiro","ok","ativo","habilitado","cap","capacitado"}
 def _is_yes(v) -> bool:
     try: return str(v).strip().lower() in YES
     except Exception: return False
 
 cap_lista = carregar_capacitados_lista() or set()
-if not isinstance(cap_lista, (set, list, tuple)):
-    cap_lista = set(cap_lista)
+if not isinstance(cap_lista, (set, list, tuple)): cap_lista = set(cap_lista)
 
 sigla_upper  = df["sigla"].astype(str).str.upper() if "sigla" in df.columns else pd.Series([""]*len(df))
 col_cap_bool = df["capacitado"].apply(_is_yes) if "capacitado" in df.columns else pd.Series([False]*len(df))
 in_list_bool = sigla_upper.isin(cap_lista) if len(cap_lista) > 0 else pd.Series([False]*len(df))
 cap_total    = int((col_cap_bool | in_list_bool).sum())
 
-# Helper de formatação (pt-BR: milhar com ponto)
 fmt = lambda n: f"{n:,}".replace(",", ".")
 
 # =============================================================================
-# HERO (com “Acesso rápido” — CARDS CLICÁVEIS)
+# HERO (com “Acesso rápido” — CARDS CLICÁVEIS via st.page_link ou fallback)
 # =============================================================================
-# Importante: use os títulos exatos das páginas no href de ?page=...
-#   - 🔍 Busca por SIGLA
-#   - 🧭 Buscar por ENDEREÇO
-st.markdown(
-    """
-    <div class="hero">
+left, right = st.columns([1.2, 0.8])
+with left:
+    st.markdown(
+        """
         <div class="hero-card">
             <h1>📡 Site Radar</h1>
             <p>Localize ERBs por <b>SIGLA</b> ou por <b>ENDEREÇO</b>, gere links do Google Maps e visualize
             dados relevantes em segundos. Interface otimizada para campo e mobile.</p>
         </div>
-        <div class="hero-right">
-            <div class="section-title">⚙️ Acesso rápido</div>
-            <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-                <a class="card-link" href="?page=%F0%9F%94%8D%20Busca%20por%20SIGLA">
-                    <div class="action-card">
-                        <b>🔍 Buscar por SIGLA</b>
-                        <p>Encontre rapidamente a ERB pelo identificador.</p>
-                    </div>
-                </a>
-                <a class="card-link" href="?page=%F0%9F%A7%AD%20Buscar%20por%20ENDERE%C3%87O">
-                    <div class="action-card">
-                        <b>🧭 Buscar por ENDEREÇO</b>
-                        <p>Retorne as ERBs mais próximas via geocodificação.</p>
-                    </div>
-                </a>
-            </div>
-        </div>
-    </div>
-    """,
-    unsafe_allow_html=True
-)
+        """,
+        unsafe_allow_html=True
+    )
+
+with right:
+    st.markdown('<div class="hero-right"><div class="section-title">⚙️ Acesso rápido</div>', unsafe_allow_html=True)
+
+    # Tenta usar st.page_link (Streamlit >= 1.33)
+    has_page_link = hasattr(st, "page_link")
+    c1, c2 = st.columns(2)
+
+    if has_page_link:
+        with c1:
+            # Card SIGLA como link nativo estilizado
+            with st.container(key="card_sigla", border=False):
+                st.markdown('<div class="page-link-card">', unsafe_allow_html=True)
+                st.page_link(
+                    "pages/1_🔍_Busca_por_SIGLA.py",
+                    label="**🔍 Buscar por SIGLA**  \nEncontre rapidamente a ERB pelo identificador."
+                )
+                st.markdown('</div>', unsafe_allow_html=True)
+
+        with c2:
+            with st.container(key="card_end", border=False):
+                st.markdown('<div class="page-link-card">', unsafe_allow_html=True)
+                st.page_link(
+                    "pages/2_🧭_Busca_por_ENDEREÇO.py",
+                    label="**🧭 Buscar por ENDEREÇO**  \nRetorne as ERBs mais próximas via geocodificação."
+                )
+                st.markdown('</div>', unsafe_allow_html=True)
+
+    else:
+        # Fallback: botões invisíveis que chamam st.switch_page, mantendo o "card look"
+        def _card(label_md: str, page_path: str, key: str):
+            st.markdown(f'<div class="action-card">{label_md}</div>', unsafe_allow_html=True)
+            # botão com rótulo curto para ocupar pouco espaço; estilize para parecer invisível se quiser
+            if st.button("Abrir", key=key):
+                st.switch_page(page_path)
+
+        with c1:
+            _card("**🔍 Buscar por SIGLA**  <br/>Encontre rapidamente a ERB pelo identificador.", 
+                  "pages/1_🔍_Busca_por_SIGLA.py", key="open_sigla")
+        with c2:
+            _card("**🧭 Buscar por ENDEREÇO**  <br/>Retorne as ERBs mais próximas via geocodificação.", 
+                  "pages/2_🧭_Busca_por_ENDEREÇO.py", key="open_end")
+
+    st.markdown('</div>', unsafe_allow_html=True)  # fecha hero-right
 
 # =============================================================================
 # CARDS TÉCNICOS (com dados reais)
