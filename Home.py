@@ -74,32 +74,56 @@ STYLES = """
 /* ===== Seções ===== */
 .section-title { font-size: 18px; font-weight: 800; margin: 14px 0 10px 0; }
 
-/* ===== Paleta de sombras/glow ===== */
+/* ===== Paleta ===== */
 :root {
-  --glow-blue: 0 0 0 2px rgba(31,111,235,.28), 0 10px 26px rgba(31,111,235,.30), 0 0 22px rgba(31,111,235,.45);
+  /* glow azul padrão */
+  --glow-blue: 0 0 0 2px rgba(31,111,235,.28), 0 10px 26px rgba(31,111,235,.30), 0 0 22px rgba(31,111,235,.35);
+
+  /* Card primário (SIGLA) - azul */
+  --card-blue-1: #2467e5; /* topo */
+  --card-blue-2: #1f6feb; /* base */
+  --card-blue-hover-1: #1c5bd0;
+  --card-blue-hover-2: #1b62dc;
+
+  /* Card secundário (ENDEREÇO) - teal/ciano */
+  --card-teal-1: #0fb5c8;
+  --card-teal-2: #12a4b8;
+  --card-teal-hover-1: #0ea3b5;
+  --card-teal-hover-2: #0f9cae;
 }
 
 /* ===== Cartões clicáveis com st.page_link (Streamlit >= 1.33) ===== */
 .page-link-card > div > a {
     display:block; width:100%; height:100%;
-    background: linear-gradient(180deg, rgba(31,111,235,0.10) 0%, rgba(31,111,235,0.08) 100%) !important;
-    border: 1px solid rgba(31,111,235,0.25) !important;
-    color: #E6ECF3 !important;
+    /* por padrão vai azul; usamos modificadores por classe para diferençar cada card */
+    background: linear-gradient(180deg, var(--card-blue-1) 0%, var(--card-blue-2) 100%) !important;
+    border: 1px solid rgba(255,255,255,0.16) !important;
+    color: #ffffff !important;
     border-radius: 14px; padding: 16px; text-decoration:none !important;
-    transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease, background .15s ease;
+    transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease, background .15s ease, filter .15s ease;
     cursor: pointer;
+}
+/* Variante teal (ENDEREÇO) */
+.page-link-card.teal > div > a {
+    background: linear-gradient(180deg, var(--card-teal-1) 0%, var(--card-teal-2) 100%) !important;
 }
 .page-link-card > div > a:hover,
 .page-link-card > div > a:focus-visible {
     transform: translateY(-2px);
-    background: linear-gradient(180deg, rgba(31,111,235,0.14) 0%, rgba(31,111,235,0.12) 100%) !important;
-    border-color: rgba(31,111,235,0.4) !important;
+    filter: brightness(1.02);
     box-shadow: var(--glow-blue);
     outline: none;
 }
-.page-link-card > div > a:active {
-    transform: translateY(0) scale(.98);
+/* Hovers específicos */
+.page-link-card:not(.teal) > div > a:hover,
+.page-link-card:not(.teal) > div > a:focus-visible {
+    background: linear-gradient(180deg, var(--card-blue-hover-1) 0%, var(--card-blue-hover-2) 100%) !important;
 }
+.page-link-card.teal > div > a:hover,
+.page-link-card.teal > div > a:focus-visible {
+    background: linear-gradient(180deg, var(--card-teal-hover-1) 0%, var(--card-teal-hover-2) 100%) !important;
+}
+.page-link-card > div > a:active { transform: translateY(0) scale(.98); }
 
 /* ===== Fallback: botões ocultos (mantêm funcionalidade) ===== */
 .fallback-actions [data-testid="stButton"] button {
@@ -113,21 +137,31 @@ STYLES = """
 
 /* ===== Visual dos cards no fallback (divs clicáveis por JS) ===== */
 .fallback-card {
-    background: linear-gradient(180deg, rgba(31,111,235,0.10) 0%, rgba(31,111,235,0.08) 100%);
-    border: 1px solid rgba(31,111,235,0.25);
-    color: #E6ECF3;
+    background: linear-gradient(180deg, var(--card-blue-1) 0%, var(--card-blue-2) 100%);
+    border: 1px solid rgba(255,255,255,0.16);
+    color: #ffffff;
     border-radius: 14px;
     padding: 16px;
-    transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease, background .15s ease;
+    transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease, background .15s ease, filter .15s ease;
     cursor: pointer;
+}
+.fallback-card.teal {
+    background: linear-gradient(180deg, var(--card-teal-1) 0%, var(--card-teal-2) 100%);
 }
 .fallback-card:hover,
 .fallback-card:focus-visible {
     transform: translateY(-2px);
-    background: linear-gradient(180deg, rgba(31,111,235,0.14) 0%, rgba(31,111,235,0.12) 100%);
-    border-color: rgba(31,111,235,0.4);
+    filter: brightness(1.02);
     box-shadow: var(--glow-blue);
     outline: none;
+}
+.fallback-card:not(.teal):hover,
+.fallback-card:not(.teal):focus-visible {
+    background: linear-gradient(180deg, var(--card-blue-hover-1) 0%, var(--card-blue-hover-2) 100%);
+}
+.fallback-card.teal:hover,
+.fallback-card.teal:focus-visible {
+    background: linear-gradient(180deg, var(--card-teal-hover-1) 0%, var(--card-teal-hover-2) 100%);
 }
 .fallback-card:active { transform: translateY(0) scale(.98); }
 
@@ -144,7 +178,7 @@ st.markdown(
     """
     <div class="topbar">
         <div class="brand">
-            <img src="logo.png" alt="Site Radar" />
+            <img src="logo.png" alt="Site Radar"/>
         </div>
         <div class="actions">v1.0 • Ambiente de Produção</div>
     </div>
@@ -222,7 +256,7 @@ with right:
 
         with c2:
             with st.container(key="card_end", border=False):
-                st.markdown('<div class="page-link-card">', unsafe_allow_html=True)
+                st.markdown('<div class="page-link-card teal">', unsafe_allow_html=True)
                 st.page_link(
                     "pages/2_🧭_Busca_por_ENDEREÇO.py",
                     label="**🧭 Buscar por ENDEREÇO**  \nRetorne as ERBs mais próximas via geocodificação."
@@ -233,7 +267,7 @@ with right:
         # ====== CAMINHO 2: Fallback — botões ocultos + card visual + JS para simular clique ======
         st.markdown('<div class="fallback-actions">', unsafe_allow_html=True)
 
-        # Card SIGLA
+        # Card SIGLA (azul)
         with c1:
             st.markdown(
                 '<div class="fallback-card" id="card-sigla" tabindex="0">'
@@ -241,14 +275,14 @@ with right:
                 '</div>',
                 unsafe_allow_html=True
             )
-            sigla_clicked = st.button("open_sigla", key="open_sigla")  # rótulo = key para facilitar o JS
+            sigla_clicked = st.button("open_sigla", key="open_sigla")  # rótulo = key p/ JS localizar
             if sigla_clicked:
                 st.switch_page("pages/1_🔍_Busca_por_SIGLA.py")
 
-        # Card ENDEREÇO
+        # Card ENDEREÇO (teal)
         with c2:
             st.markdown(
-                '<div class="fallback-card" id="card-end" tabindex="0">'
+                '<div class="fallback-card teal" id="card-end" tabindex="0">'
                 '<strong>🧭 Buscar por ENDEREÇO</strong><br/>Retorne as ERBs mais próximas via geocodificação.'
                 '</div>',
                 unsafe_allow_html=True
@@ -257,48 +291,32 @@ with right:
             if end_clicked:
                 st.switch_page("pages/2_🧭_Busca_por_ENDEREÇO.py")
 
-        # --- Injeta JS para simular o clique no botão quando o card for pressionado ---
+        # --- JS: simula clique do botão oculto ao clicar no card ---
         import streamlit.components.v1 as components
         components.html(
             """
             <script>
             (function () {
-              const map = {
-                'card-sigla': 'open_sigla',
-                'card-end':   'open_end'
-              };
-
+              const map = { 'card-sigla': 'open_sigla', 'card-end': 'open_end' };
               function clickStreamlitButton(streamlitKey) {
-                // Busca por botões do Streamlit e aciona o que contém o texto/label da key
                 const buttons = window.parent.document.querySelectorAll('[data-testid="stButton"] button');
                 for (const btn of buttons) {
                   const label = (btn.getAttribute('aria-label') || btn.textContent || '').trim();
-                  if (label.includes(streamlitKey)) {
-                    btn.click();
-                    return true;
-                  }
+                  if (label.includes(streamlitKey)) { btn.click(); return true; }
                 }
                 return false;
               }
-
               Object.entries(map).forEach(([cardId, key]) => {
                 const el = document.getElementById(cardId);
                 if (!el) return;
-
-                const handler = (ev) => {
-                  ev.preventDefault();
-                  clickStreamlitButton(key);
-                };
+                const handler = (ev) => { ev.preventDefault(); clickStreamlitButton(key); };
                 el.addEventListener('click', handler);
-                el.addEventListener('keydown', (e) => {
-                  if (e.key === 'Enter' || e.key === ' ') handler(e);
-                });
+                el.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') handler(e); });
               });
             })();
             </script>
             """,
-            height=0,
-            width=0,
+            height=0, width=0,
         )
 
         st.markdown('</div>', unsafe_allow_html=True)  # fecha .fallback-actions
@@ -354,3 +372,4 @@ st.markdown(
     '<div class="footer">❤️ Desenvolvido por Raphael Robles — © 2026 • Todos os direitos reservados 🚀</div>',
     unsafe_allow_html=True
 )
+
