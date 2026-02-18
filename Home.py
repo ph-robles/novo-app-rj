@@ -229,7 +229,7 @@ with left:
         <div class="hero-card">
             <h1>📡 Site Radar</h1>
             <p>Localize ERBs por <b>SIGLA</b> ou por <b>ENDEREÇO</b>, gere links do Google Maps e visualize
-            dados relevantes em segundos. Interface otimizada para campo e mobile.</p>
+            dados relevantes em segundos.</p>
         </div>
         """,
         unsafe_allow_html=True
