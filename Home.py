@@ -16,7 +16,7 @@ st.markdown(hide_menu_style, unsafe_allow_html=True)
 # LOGO (opcional)
 st.image("logo.png", width=220)
 
-st.title("📡 Site Radar")
+st.title("📡 Localizar Site/ERB")
 st.markdown("### Selecione uma opção abaixo:")
 
 # CSS PREMIUM PARA BOTÕES DA HOME
