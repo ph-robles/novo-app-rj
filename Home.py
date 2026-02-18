@@ -11,7 +11,7 @@ from utils.data_loader import carregar_dados, carregar_capacitados_lista
 st.set_page_config(page_title="Home • Site Radar", page_icon="📡", layout="wide")
 
 # =============================================================================
-# ESTILOS (Topbar, Hero, Cards) + Ocultar sidebar só na Home
+# ESTILOS – Topbar, Hero, Cards (SOLID) + Sidebar oculta só na Home
 # =============================================================================
 STYLES = """
 <style>
@@ -20,12 +20,12 @@ STYLES = """
 
 /* ===== Topbar fixa ===== */
 .topbar {
-    position: fixed; top: 0; left: 0; width: 100%; height: 64px;
-    background: linear-gradient(90deg, rgba(15,18,26,0.85) 0%, rgba(22,27,37,0.85) 100%);
-    backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
-    border-bottom: 1px solid rgba(255,255,255,0.12);
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 0 16px; z-index: 9999;
+  position: fixed; top: 0; left: 0; width: 100%; height: 64px;
+  background: linear-gradient(90deg, rgba(15,18,26,0.85) 0%, rgba(22,27,37,0.85) 100%);
+  backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+  border-bottom: 1px solid rgba(255,255,255,0.12);
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 16px; z-index: 9999;
 }
 .topbar .brand { display: inline-flex; align-items: center; gap: 10px; }
 .topbar .brand img { height: 32px; width: auto; object-fit: contain; filter: drop-shadow(0 1px 2px rgba(0,0,0,.25)); }
@@ -41,41 +41,41 @@ STYLES = """
 .hero { display: grid; grid-template-columns: 1.2fr .8fr; gap: 18px; align-items: center; margin-top: 4px; }
 @media (max-width: 900px) { .hero { grid-template-columns: 1fr; } }
 .hero-card {
-    background: linear-gradient(180deg, rgba(28,34,48,0.75) 0%, rgba(24,30,43,0.65) 100%);
-    border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; padding: 22px 20px; color: #E6ECF3;
+  background: linear-gradient(180deg, rgba(28,34,48,0.75) 0%, rgba(24,30,43,0.65) 100%);
+  border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; padding: 22px 20px; color: #E6ECF3;
 }
 .hero h1 { font-size: 30px; font-weight: 800; margin: 0 0 8px 0; }
-.hero p { font-size: 15px; color: #B8C3D1; margin: 0; }
+.hero p  { font-size: 15px; color: #B8C3D1; margin: 0; }
+
 .hero-right {
-    background: radial-gradient(1200px 400px at 30% -20%, rgba(31,111,235,0.18), rgba(0,0,0,0) 60%),
-                linear-gradient(180deg, rgba(22,28,41,0.8) 0%, rgba(18,22,33,0.8) 100%);
-    border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; padding: 16px 18px;
+  background:
+    radial-gradient(1200px 400px at 30% -20%, rgba(31,111,235,0.18), rgba(0,0,0,0) 60%),
+    linear-gradient(180deg, rgba(22,28,41,0.8) 0%, rgba(18,22,33,0.8) 100%);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 16px;
+  padding: 16px 18px;
 }
 
 /* ===== Cards Técnicos (métricas) ===== */
 .tech-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-top: 18px; }
 @media (max-width: 900px) { .tech-grid { grid-template-columns: 1fr; } }
 .tech-card {
-    background: rgba(30,35,45,0.65);
-    border: 1px solid rgba(255,255,255,0.08);
-    padding: 16px 18px; border-radius: 14px; color: #E6ECF3;
+  background: rgba(30,35,45,0.65);
+  border: 1px solid rgba(255,255,255,0.08);
+  padding: 16px 18px; border-radius: 14px; color: #E6ECF3;
 }
 .tech-card h3 { margin: 0; font-size: 15px; font-weight: 700; color: #C9D3E0; }
 .tech-number { font-size: 32px; font-weight: 800; margin-top: 6px; letter-spacing: .2px; }
 .tech-sub { color: #9EABBB; font-size: 12.5px; margin-top: 4px; }
 
-/* ===== Seções ===== */
-.section-title { font-size: 18px; font-weight: 800; margin: 14px 0 10px 0; }
-
-/* ===== Paleta RECOMENDADA (sólida) ===== */
+/* ===== Paleta recomendada (SOLID) ===== */
 :root {
-  --glow-blue: 0 0 0 2px rgba(31,111,235,.28),
-               0 10px 26px rgba(31,111,235,.30),
-               0 0 22px rgba(31,111,235,.35);
+  /* Glow azul padrão */
+  --glow-blue: 0 0 0 2px rgba(31,111,235,.28), 0 10px 26px rgba(31,111,235,.30), 0 0 22px rgba(31,111,235,.35);
 
   /* Primário (SIGLA – Azul) */
-  --card-blue-1: #2467e5;         /* topo do gradiente */
-  --card-blue-2: #1f6feb;         /* base do gradiente */
+  --card-blue-1: #2467e5;
+  --card-blue-2: #1f6feb;
   --card-blue-hover-1: #1c5bd0;
   --card-blue-hover-2: #1b62dc;
 
@@ -87,13 +87,12 @@ STYLES = """
 
   /* Texto e bordas */
   --card-text: #ffffff;
-  --card-border: rgba(255,255,255,0.16);
-  --card-border-strong: rgba(255,255,255,0.22);
+  --card-border: rgba(255,255,255,0.18);
+  --card-border-strong: rgba(255,255,255,0.26);
 }
 
 /* =========================================================
-   CARDS CLICÁVEIS — Reforço de especificidade para cor sólida
-   (aplicamos cor no container, no wrapper interno e no <a>)
+   CARDS CLICÁVEIS – forçar COR SÓLIDA (container + wrapper + <a>)
    ========================================================= */
 
 /* SIGLA (azul) — st.page_link */
@@ -110,6 +109,7 @@ STYLES = """
   padding: 16px !important; text-decoration:none !important;
   transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease, background .15s ease, filter .15s ease;
   cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
 }
 .page-link-card:hover,
 .page-link-card:focus-within,
@@ -137,15 +137,13 @@ STYLES = """
   background: linear-gradient(180deg, var(--card-teal-hover-1) 0%, var(--card-teal-hover-2) 100%) !important;
 }
 
-/* ===== Fallback: botões ocultos ===== */
+/* ===== Fallback: esconder botões e pintar cards DIV (JS) ===== */
 .fallback-actions [data-testid="stButton"] button {
   position: absolute !important;
   opacity: 0 !important; width: 0 !important; height: 0 !important;
   padding: 0 !important; margin: 0 !important; border: 0 !important;
   pointer-events: none !important; overflow: hidden !important; clip: rect(0,0,0,0) !important;
 }
-
-/* ===== Fallback: cards visuais (divs clicáveis via JS) ===== */
 .fallback-card {
   background: linear-gradient(180deg, var(--card-blue-1) 0%, var(--card-blue-2) 100%) !important;
   color: var(--card-text) !important;
@@ -161,8 +159,7 @@ STYLES = """
 .fallback-card:hover,
 .fallback-card:focus-visible {
   transform: translateY(-2px); filter: brightness(1.02);
-  box-shadow: var(--glow-blue); border-color: var(--card-border-strong) !important;
-  outline: none;
+  box-shadow: var(--glow-blue); border-color: var(--card-border-strong) !important; outline: none;
 }
 .fallback-card:active { transform: translateY(0) scale(.98); }
 
@@ -179,7 +176,7 @@ st.markdown(
     """
     <div class="topbar">
         <div class="brand">
-            <img src="logo.png" alt="Site Radar">
+            <img src="logo.png" alt="logo" />
         </div>
         <div class="actions">v1.0 • Ambiente de Produção</div>
     </div>
@@ -223,7 +220,7 @@ cap_total    = int((col_cap_bool | in_list_bool).sum())
 fmt = lambda n: f"{n:,}".replace(",", ".")
 
 # =============================================================================
-# HERO (Acesso rápido: cards clicáveis) — st.page_link ou fallback com JS
+# HERO – “Acesso rápido” colorido e 100% clicável
 # =============================================================================
 left, right = st.columns([1.2, 0.8])
 with left:
@@ -244,7 +241,7 @@ with right:
     c1, c2 = st.columns(2)
 
     if has_page_link:
-        # Streamlit recente — usa st.page_link (card = link)
+        # ===== Streamlit recente — st.page_link (o link ocupa o card TODO) =====
         with c1:
             st.markdown('<div class="page-link-card">', unsafe_allow_html=True)
             st.page_link(
@@ -262,15 +259,14 @@ with right:
             st.markdown('</div>', unsafe_allow_html=True)
 
     else:
-        # Fallback — botões ocultos + card visual + JS simulando clique
+        # ===== Fallback — botões ocultos + card DIV colorido + JS dispara click =====
         st.markdown('<div class="fallback-actions">', unsafe_allow_html=True)
 
         with c1:
             st.markdown(
                 '<div class="fallback-card" id="card-sigla" tabindex="0">'
                 '<strong>🔍 Buscar por SIGLA</strong><br/>Encontre rapidamente a ERB pelo identificador.'
-                '</div>',
-                unsafe_allow_html=True
+                '</div>', unsafe_allow_html=True
             )
             if st.button("open_sigla", key="open_sigla"):
                 st.switch_page("pages/1_🔍_Busca_por_SIGLA.py")
@@ -279,8 +275,7 @@ with right:
             st.markdown(
                 '<div class="fallback-card teal" id="card-end" tabindex="0">'
                 '<strong>🧭 Buscar por ENDEREÇO</strong><br/>Retorne as ERBs mais próximas via geocodificação.'
-                '</div>',
-                unsafe_allow_html=True
+                '</div>', unsafe_allow_html=True
             )
             if st.button("open_end", key="open_end"):
                 st.switch_page("pages/2_🧭_Busca_por_ENDEREÇO.py")
@@ -312,7 +307,7 @@ with right:
             height=0, width=0,
         )
 
-        st.markdown('</div>', unsafe_allow_html=True)
+        st.markdown('</div>', unsafe_allow_html=True)  # fecha fallback-actions
 
     st.markdown('</div>', unsafe_allow_html=True)  # fecha hero-right
 
