@@ -7,6 +7,151 @@ st.set_page_config(page_title="Buscar por SIGLA • Site Radar", page_icon="📡
 
 # ... (seu CSS e sidebar iguais)
 
+<<<<<<< HEAD
+=======
+/* Sidebar geral (desktop) */
+[data-testid="stSidebar"] {
+    background: rgba(20, 25, 35, 0.55) !important;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-right: 1px solid rgba(255, 255, 255, 0.15);
+    padding-top: 40px;
+    width: 240px !important;
+}
+
+/* LOGO centralizada */
+.sidebar-logo {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 250px;
+}
+
+/* ----------------------------
+   MODO COMPACTO PARA CELULAR
+----------------------------- */
+@media (max-width: 760px) {
+
+    /* Sidebar fica mais larga (apenas ajuste solicitado) */
+    [data-testid="stSidebar"] {
+        width: 280px !important;
+        min-width: 136px !important;
+        padding-top: 24px;
+        padding-left: 6px;
+        padding-right: 6px;
+    }
+
+    /* A logo se ajusta para 250px (pedido) */
+    .sidebar-logo img {
+        width: 80px !important;
+    }
+
+    /* Conteúdo oculto na sidebar compacta */
+    .sidebar-content, .sidebar-text {
+        display: none !important;
+    }
+}
+
+/* ---------------------------------
+   ESTILO DOS "CHIPS" DE SUGESTÕES
+---------------------------------- */
+#chips-scope { margin-top: .25rem; }
+#chips-scope div[data-testid="stHorizontalBlock"] { row-gap: .5rem; }
+#chips-scope div[data-testid="stButton"] > button {
+  border-radius: 9999px;
+  padding: .35rem .9rem;
+  font-size: 0.92rem;
+  line-height: 1rem;
+  border: 1px solid rgba(49,51,63,0.25);
+  background: rgba(49,51,63,0.04);
+  color: inherit;
+  cursor: pointer;
+  transition: all .15s ease-in-out;
+}
+#chips-scope div[data-testid="stButton"] > button:hover {
+  background: rgba(49,51,63,0.08);
+  border-color: rgba(49,51,63,0.4);
+  transform: translateY(-1px);
+}
+#chips-scope div[data-testid="stButton"] > button:active {
+  transform: translateY(0px) scale(.98);
+}
+/* dark mode */
+:root .st-dark #chips-scope div[data-testid="stButton"] > button {
+  border-color: rgba(250, 250, 250, 0.18);
+  background: rgba(250, 250, 250, 0.06);
+}
+:root .st-dark #chips-scope div[data-testid="stButton"] > button:hover {
+  border-color: rgba(250, 250, 250, 0.35);
+  background: rgba(250, 250, 250, 0.12);
+}
+</style>
+"""
+st.markdown(sidebar_style, unsafe_allow_html=True)
+
+# Sidebar com logo
+with st.sidebar:
+    st.markdown('<div class="sidebar-logo">', unsafe_allow_html=True)
+    st.image("logo.png", width=300)
+    st.markdown("</div>", unsafe_allow_html=True)
+
+# ==============================
+#   FUNÇÕES AUXILIARES (LOCAIS)
+# ==============================
+def _format_coord(x):
+    try:
+        if pd.isna(x):
+            return "—"
+        return f"{float(x):.6f}"
+    except Exception:
+        return "—"
+
+def _gerar_sugestoes(busca_raw: str, candidatos: list[str], limite: int = 8) -> list[str]:
+    """
+    Gera sugestões "parecidas" para a sigla digitada:
+      1) Começa com...
+      2) Contém...
+      3) Fuzzy (Levenshtein <= 1)
+    """
+    if not busca_raw:
+        return []
+    bnorm = normalizar_sigla(busca_raw)
+    pares = [(s, normalizar_sigla(s)) for s in candidatos]
+
+    # 1) Começa com...
+    pref = [s for s, n in pares if n.startswith(bnorm)]
+    seen = set(pref)
+
+    # 2) Contém...
+    if len(pref) < limite:
+        cont = [s for s, n in pares if (bnorm in n) and (s not in seen)]
+        pref.extend(cont)
+        seen.update(cont)
+
+    # 3) Fuzzy leve (<= 1 edição)
+    if len(pref) < limite:
+        fuzzy = []
+        for s, n in pares:
+            if s in seen:
+                continue
+            d = levenshtein(n, bnorm)
+            if d <= 1:
+                fuzzy.append((d, s))
+        fuzzy = [s for _, s in sorted(fuzzy, key=lambda x: (x[0], x[1]))]
+        pref.extend(fuzzy)
+
+    # Limita e mantém ordem
+    return pref[:limite]
+
+def _select_sugestao(value: str):
+    # Callback dos chips: salva em session_state e sinaliza auto-busca
+    st.session_state["busca_sigla_pending"] = value
+    st.session_state["do_busca_sigla"] = True
+    # O clique no botão já dispara um rerun automaticamente.
+
+# ==============================
+#   CONTEÚDO — BUSCA POR SIGLA
+# ==============================
+>>>>>>> 5c380e73e06b21741f6a4fe5be918825f3c53c9c
 st.title("🔍 Buscar por SIGLA")
 
 df = carregar_dados()
