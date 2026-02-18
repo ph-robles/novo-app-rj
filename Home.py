@@ -22,6 +22,7 @@ st.markdown("### Selecione uma opção abaixo:")
 # CSS PREMIUM PARA BOTÕES
 button_style = """
 <style>
+
 div.stButton > button {
     background-color: #0084ff;
     color: white;
@@ -34,15 +35,18 @@ div.stButton > button {
     transition: all 0.2s ease-in-out;
     box-shadow: 0px 3px 10px rgba(0, 132, 255, 0.3);
 }
+
 div.stButton > button:hover {
     background-color: #006ddb;
     transform: translateY(-3px);
     box-shadow: 0px 5px 18px rgba(0, 132, 255, 0.45);
 }
+
 div.stButton > button:active {
     transform: scale(0.97);
     background-color: #005bb8;
 }
+
 </style>
 """
 st.markdown(button_style, unsafe_allow_html=True)
@@ -59,20 +63,12 @@ with col2:
 
 st.markdown("---")
 
-# RODAPÉ + LINK "Sobre" (via API nativa de multipage)
-footer_col1, footer_col2, footer_col3 = st.columns([1,2,1])
-with footer_col2:
-    st.page_link(
-        "pages/3_ℹ️_Sobre.py",
-        label="ℹ️ Sobre o TowerLink",
-        icon="ℹ️"
-    )
-
+# LINK PARA A PÁGINA SOBRE
 st.markdown(
-    """
-    <div style="text-align:center; margin-top:12px; opacity:0.8;">
-      ❤️ Desenvolvido por Raphael Robles • © 2026
-    </div>
-    """,
+    '<div style="text-align:center; margin-top:20px;">'
+    '❤️ Desenvolvido por Raphael Robles • @2026 '
+    '/3_ℹ️_SobreSobre o TowerLink</a>'
+    '</div>',
     unsafe_allow_html=True
+)
 )
