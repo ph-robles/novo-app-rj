@@ -74,94 +74,88 @@ STYLES = """
 /* ===== Seções ===== */
 .section-title { font-size: 18px; font-weight: 800; margin: 14px 0 10px 0; }
 
-/* ===== Paleta ===== */
+/* ===== Paleta RECOMENDADA ===== */
 :root {
-  /* glow azul padrão */
-  --glow-blue: 0 0 0 2px rgba(31,111,235,.28), 0 10px 26px rgba(31,111,235,.30), 0 0 22px rgba(31,111,235,.35);
+  /* Glow azul padrão */
+  --glow-blue: 0 0 0 2px rgba(31,111,235,.28),
+               0 10px 26px rgba(31,111,235,.30),
+               0 0 22px rgba(31,111,235,.35);
 
-  /* Card primário (SIGLA) - azul */
-  --card-blue-1: #2467e5; /* topo */
-  --card-blue-2: #1f6feb; /* base */
+  /* Primário (SIGLA – Azul) */
+  --card-blue-1: #2467e5;         /* topo do gradiente */
+  --card-blue-2: #1f6feb;         /* base do gradiente */
   --card-blue-hover-1: #1c5bd0;
   --card-blue-hover-2: #1b62dc;
 
-  /* Card secundário (ENDEREÇO) - teal/ciano */
+  /* Secundário (ENDEREÇO – Teal/Ciano) */
   --card-teal-1: #0fb5c8;
   --card-teal-2: #12a4b8;
   --card-teal-hover-1: #0ea3b5;
   --card-teal-hover-2: #0f9cae;
+
+  /* Texto e bordas */
+  --card-text: #ffffff;
+  --card-border: rgba(255,255,255,0.16);
+  --card-border-strong: rgba(255,255,255,0.22);
 }
 
-/* ===== Cartões clicáveis com st.page_link (Streamlit >= 1.33) ===== */
+/* ===== Cartões clicáveis com st.page_link (Streamlit ≥ 1.33) ===== */
+/* SIGLA (azul) */
 .page-link-card > div > a {
-    display:block; width:100%; height:100%;
-    /* por padrão vai azul; usamos modificadores por classe para diferençar cada card */
-    background: linear-gradient(180deg, var(--card-blue-1) 0%, var(--card-blue-2) 100%) !important;
-    border: 1px solid rgba(255,255,255,0.16) !important;
-    color: #ffffff !important;
-    border-radius: 14px; padding: 16px; text-decoration:none !important;
-    transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease, background .15s ease, filter .15s ease;
-    cursor: pointer;
-}
-/* Variante teal (ENDEREÇO) */
-.page-link-card.teal > div > a {
-    background: linear-gradient(180deg, var(--card-teal-1) 0%, var(--card-teal-2) 100%) !important;
+  display:block; width:100%; height:100%;
+  background: linear-gradient(180deg, var(--card-blue-1) 0%, var(--card-blue-2) 100%) !important;
+  color: var(--card-text) !important;
+  border: 1px solid var(--card-border) !important;
+  border-radius: 14px; padding: 16px; text-decoration:none !important;
+  transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease, background .15s ease, filter .15s ease;
+  cursor: pointer;
 }
 .page-link-card > div > a:hover,
 .page-link-card > div > a:focus-visible {
-    transform: translateY(-2px);
-    filter: brightness(1.02);
-    box-shadow: var(--glow-blue);
-    outline: none;
-}
-/* Hovers específicos */
-.page-link-card:not(.teal) > div > a:hover,
-.page-link-card:not(.teal) > div > a:focus-visible {
-    background: linear-gradient(180deg, var(--card-blue-hover-1) 0%, var(--card-blue-hover-2) 100%) !important;
-}
-.page-link-card.teal > div > a:hover,
-.page-link-card.teal > div > a:focus-visible {
-    background: linear-gradient(180deg, var(--card-teal-hover-1) 0%, var(--card-teal-hover-2) 100%) !important;
+  transform: translateY(-2px); filter: brightness(1.02);
+  background: linear-gradient(180deg, var(--card-blue-hover-1) 0%, var(--card-blue-hover-2) 100%) !important;
+  border-color: var(--card-border-strong) !important;
+  box-shadow: var(--glow-blue);
+  outline: none;
 }
 .page-link-card > div > a:active { transform: translateY(0) scale(.98); }
 
-/* ===== Fallback: botões ocultos (mantêm funcionalidade) ===== */
-.fallback-actions [data-testid="stButton"] button {
-    position: absolute !important;
-    opacity: 0 !important;
-    width: 0 !important;
-    height: 0 !important;
-    padding: 0 !important; margin: 0 !important; border: 0 !important;
-    pointer-events: none !important; overflow: hidden !important; clip: rect(0,0,0,0) !important;
+/* ENDEREÇO (teal) */
+.page-link-card.teal > div > a {
+  background: linear-gradient(180deg, var(--card-teal-1) 0%, var(--card-teal-2) 100%) !important;
+}
+.page-link-card.teal > div > a:hover,
+.page-link-card.teal > div > a:focus-visible {
+  background: linear-gradient(180deg, var(--card-teal-hover-1) 0%, var(--card-teal-hover-2) 100%) !important;
 }
 
-/* ===== Visual dos cards no fallback (divs clicáveis por JS) ===== */
+/* ===== Fallback: botões ocultos (mantêm funcionalidade) ===== */
+.fallback-actions [data-testid="stButton"] button {
+  position: absolute !important;
+  opacity: 0 !important; width: 0 !important; height: 0 !important;
+  padding: 0 !important; margin: 0 !important; border: 0 !important;
+  pointer-events: none !important; overflow: hidden !important; clip: rect(0,0,0,0) !important;
+}
+
+/* ===== Fallback: cards visuais (divs clicáveis via JS) ===== */
 .fallback-card {
-    background: linear-gradient(180deg, var(--card-blue-1) 0%, var(--card-blue-2) 100%);
-    border: 1px solid rgba(255,255,255,0.16);
-    color: #ffffff;
-    border-radius: 14px;
-    padding: 16px;
-    transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease, background .15s ease, filter .15s ease;
-    cursor: pointer;
+  background: linear-gradient(180deg, var(--card-blue-1) 0%, var(--card-blue-2) 100%);
+  color: var(--card-text);
+  border: 1px solid var(--card-border);
+  border-radius: 14px;
+  padding: 16px;
+  transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease, background .15s ease, filter .15s ease;
+  cursor: pointer;
 }
 .fallback-card.teal {
-    background: linear-gradient(180deg, var(--card-teal-1) 0%, var(--card-teal-2) 100%);
+  background: linear-gradient(180deg, var(--card-teal-1) 0%, var(--card-teal-2) 100%);
 }
 .fallback-card:hover,
 .fallback-card:focus-visible {
-    transform: translateY(-2px);
-    filter: brightness(1.02);
-    box-shadow: var(--glow-blue);
-    outline: none;
-}
-.fallback-card:not(.teal):hover,
-.fallback-card:not(.teal):focus-visible {
-    background: linear-gradient(180deg, var(--card-blue-hover-1) 0%, var(--card-blue-hover-2) 100%);
-}
-.fallback-card.teal:hover,
-.fallback-card.teal:focus-visible {
-    background: linear-gradient(180deg, var(--card-teal-hover-1) 0%, var(--card-teal-hover-2) 100%);
+  transform: translateY(-2px); filter: brightness(1.02);
+  box-shadow: var(--glow-blue);
+  border-color: var(--card-border-strong);
+  outline: none;
 }
 .fallback-card:active { transform: translateY(0) scale(.98); }
 
@@ -372,4 +366,3 @@ st.markdown(
     '<div class="footer">❤️ Desenvolvido por Raphael Robles — © 2026 • Todos os direitos reservados 🚀</div>',
     unsafe_allow_html=True
 )
-
