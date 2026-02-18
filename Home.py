@@ -66,9 +66,8 @@ st.markdown("---")
 # LINK PARA A PÁGINA SOBRE
 st.markdown(
     '<div style="text-align:center; margin-top:20px;">'
-    '❤️ Desenvolvido por Raphael Robles • @2026 '
+    '❤️ Desenvolvido por Raphael Robles • '
     '/3_ℹ️_SobreSobre o TowerLink</a>'
     '</div>',
     unsafe_allow_html=True
-)
 )
