@@ -73,21 +73,21 @@ STYLES = """
 /* ===== Seções ===== */
 .section-title { font-size: 18px; font-weight: 800; margin: 14px 0 10px 0; }
 
-/* ===== Botões de ação (estilo premium) ===== */
-div.stButton > button {
-    background: #1f6feb; color: #fff; border-radius: 14px; padding: 14px 22px;
-    font-size: 1.05rem; font-weight: 700; border: 1px solid rgba(255,255,255,0.06);
-    width: 100%; transition: all 0.18s ease-in-out; box-shadow: 0px 6px 18px rgba(31, 111, 235, 0.25);
-}
-div.stButton > button:hover { background: #175bd0; transform: translateY(-2px); box-shadow: 0px 10px 22px rgba(31, 111, 235, 0.38); }
-div.stButton > button:active { transform: translateY(0) scale(.98); background: #114db7; }
-
-/* ===== Cards de ação ===== */
-.action-card {
+/* ===== Cartões clicáveis ===== */
+a.card-link { text-decoration: none; }
+a.card-link .action-card {
     background: linear-gradient(180deg, rgba(31,111,235,0.10) 0%, rgba(31,111,235,0.08) 100%);
     border: 1px solid rgba(31,111,235,0.25); border-radius: 14px; padding: 16px; color: #E6ECF3;
+    transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease, background .15s ease;
+    display: block;
 }
-.action-card p { color: #BFD2F6; font-size: 13.5px; margin: 4px 0 14px 0; }
+a.card-link .action-card:hover {
+    transform: translateY(-2px);
+    background: linear-gradient(180deg, rgba(31,111,235,0.14) 0%, rgba(31,111,235,0.12) 100%);
+    border-color: rgba(31,111,235,0.4);
+    box-shadow: 0 10px 22px rgba(31,111,235,.22);
+}
+.action-card p { color: #BFD2F6; font-size: 13.5px; margin: 4px 0 0 0; }
 
 /* ===== Rodapé ===== */
 .footer { color: #9EABBB; font-size: 12.5px; text-align: center; margin-top: 16px; }
@@ -102,7 +102,7 @@ st.markdown(
     """
     <div class="topbar">
         <div class="brand">
-            logo.png
+            <img src="logo.png" alt="logo">
         </div>
         <div class="actions">v1.0 • Ambiente de Produção</div>
     </div>
@@ -133,28 +133,29 @@ else:
     com_coord = 0
 
 # Capacitados: coluna 'capacitado' (sim/não) OU presença na lista auxiliar
-YES = {"sim", "s", "yes", "y", "1", "true", "verdadeiro", "ok", "ativo", "habilitado", "cap", "capacitado"}
+YES = {"sim","s","yes","y","1","true","verdadeiro","ok","ativo","habilitado","cap","capacitado"}
 def _is_yes(v) -> bool:
-    try:
-        return str(v).strip().lower() in YES
-    except Exception:
-        return False
+    try: return str(v).strip().lower() in YES
+    except Exception: return False
 
 cap_lista = carregar_capacitados_lista() or set()
 if not isinstance(cap_lista, (set, list, tuple)):
     cap_lista = set(cap_lista)
 
-sigla_upper = df["sigla"].astype(str).str.upper() if "sigla" in df.columns else pd.Series([""] * len(df))
-col_cap_bool = df["capacitado"].apply(_is_yes) if "capacitado" in df.columns else pd.Series([False] * len(df))
-in_list_bool = sigla_upper.isin(cap_lista) if len(cap_lista) > 0 else pd.Series([False] * len(df))
-cap_total = int((col_cap_bool | in_list_bool).sum())
+sigla_upper  = df["sigla"].astype(str).str.upper() if "sigla" in df.columns else pd.Series([""]*len(df))
+col_cap_bool = df["capacitado"].apply(_is_yes) if "capacitado" in df.columns else pd.Series([False]*len(df))
+in_list_bool = sigla_upper.isin(cap_lista) if len(cap_lista) > 0 else pd.Series([False]*len(df))
+cap_total    = int((col_cap_bool | in_list_bool).sum())
 
 # Helper de formatação (pt-BR: milhar com ponto)
 fmt = lambda n: f"{n:,}".replace(",", ".")
 
 # =============================================================================
-# HERO (com “Acesso rápido” FUNCIONAL dentro do card)
+# HERO (com “Acesso rápido” — CARDS CLICÁVEIS)
 # =============================================================================
+# Importante: use os títulos exatos das páginas no href de ?page=...
+#   - 🔍 Busca por SIGLA
+#   - 🧭 Buscar por ENDEREÇO
 st.markdown(
     """
     <div class="hero">
@@ -166,29 +167,24 @@ st.markdown(
         <div class="hero-right">
             <div class="section-title">⚙️ Acesso rápido</div>
             <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-                <div class="action-card" id="ar_sigla">
-                    <b>🔍 Buscar por SIGLA</b>
-                    <p>Encontre rapidamente a ERB pelo identificador.</p>
-                </div>
-                <div class="action-card" id="ar_end">
-                    <b>🧭 Buscar por ENDEREÇO</b>
-                    <p>Retorne as ERBs mais próximas via geocodificação.</p>
-                </div>
+                <a class="card-link" href="?page=%F0%9F%94%8D%20Busca%20por%20SIGLA">
+                    <div class="action-card">
+                        <b>🔍 Buscar por SIGLA</b>
+                        <p>Encontre rapidamente a ERB pelo identificador.</p>
+                    </div>
+                </a>
+                <a class="card-link" href="?page=%F0%9F%A7%AD%20Buscar%20por%20ENDERE%C3%87O">
+                    <div class="action-card">
+                        <b>🧭 Buscar por ENDEREÇO</b>
+                        <p>Retorne as ERBs mais próximas via geocodificação.</p>
+                    </div>
+                </a>
             </div>
         </div>
     </div>
     """,
     unsafe_allow_html=True
 )
-
-# >>> Botões reais DENTRO do card “Acesso rápido”
-ar_col1, ar_col2 = st.columns(2)
-with ar_col1:
-    if st.button("🔎 Abrir busca por SIGLA", use_container_width=True, key="ar_btn_sigla"):
-        st.switch_page("pages/1_🔍_Busca_por_SIGLA.py")
-with ar_col2:
-    if st.button("🧭 Abrir busca por ENDEREÇO", use_container_width=True, key="ar_btn_end"):
-        st.switch_page("pages/2_🧭_Busca_por_ENDEREÇO.py")
 
 # =============================================================================
 # CARDS TÉCNICOS (com dados reais)
@@ -230,19 +226,6 @@ if "detentora" in df.columns and not df["detentora"].dropna().empty:
     st.bar_chart(top_det, use_container_width=True, height=260)
 else:
     st.caption("Sem coluna **detentora** na base para gerar o gráfico.")
-
-# =============================================================================
-# AÇÕES (opcional como redundância para quem rola a página)
-# =============================================================================
-st.markdown("---")
-st.markdown('<div class="section-title">⚡ Ações</div>', unsafe_allow_html=True)
-c1, c2 = st.columns(2)
-with c1:
-    if st.button("🔍 Buscar por SIGLA", use_container_width=True, key="btn_sigla_bottom"):
-        st.switch_page("pages/1_🔍_Busca_por_SIGLA.py")
-with c2:
-    if st.button("🧭 Buscar por ENDEREÇO", use_container_width=True, key="btn_end_bottom"):
-        st.switch_page("pages/2_🧭_Busca_por_ENDEREÇO.py")
 
 # =============================================================================
 # RODAPÉ
